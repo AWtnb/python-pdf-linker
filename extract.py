@@ -30,11 +30,8 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
 
 def is_adjacent_rects(previous: Rect, current: Rect) -> bool:
     x_delta = previous.top_right.distance_to(current.top_left, "mm")
-    return (
-        (x_delta < 0.5)
-        and (previous.top_right.y == current.top_left.y)
-        and (previous.bottom_right.y == current.bottom_left.y)
-    )
+    return x_delta < 0.5
+
 
 def unify_rects(rects: list[Rect]) -> list[Rect]:
     unified: list[Rect] = []
