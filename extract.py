@@ -14,15 +14,6 @@ def text_by_rect(page: Page, rect: Rect) -> str:
     return ""
 
 
-def is_adjacent_rects(previous: Rect, current: Rect) -> bool:
-    x_delta = previous.top_right.distance_to(current.top_left, "mm")
-    return (
-        (x_delta < 0.5)
-        and (previous.top_right.y == current.top_left.y)
-        and (previous.bottom_right.y == current.bottom_left.y)
-    )
-
-
 # https://github.com/pymupdf/PyMuPDF/issues/318
 def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
     rects = []
@@ -37,6 +28,30 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
     return rects
 
 
+def is_adjacent_rects(previous: Rect, current: Rect) -> bool:
+    x_delta = previous.top_right.distance_to(current.top_left, "mm")
+    return (
+        (x_delta < 0.5)
+        and (previous.top_right.y == current.top_left.y)
+        and (previous.bottom_right.y == current.bottom_left.y)
+    )
+
+def unify_rects(rects: list[Rect]) -> list[Rect]:
+    unified: list[Rect] = []
+    for rect in rects:
+        if len(unified) < 1:
+            unified.append(rect)
+            continue
+        last = unified[-1]
+        if is_adjacent_rects(last, rect) or rect.intersects(last):
+            unified.pop()
+            unified_rect = Rect(last.top_left, rect.bottom_right)
+            unified.append(unified_rect)
+        else:
+            unified.append(rect)
+    return unified
+
+
 def extract_annots(path: str) -> None:
     pdf = pymupdf.Document(path)
 
@@ -48,23 +63,7 @@ def extract_annots(path: str) -> None:
         highlight_rects = to_minimal_rects(highlight_annots)
         highlight_rects.sort(key=lambda a: (a.top_left.y, a.top_left.x))
 
-        unified_rects: list[Rect] = []
-        for rect in highlight_rects:
-            if len(unified_rects) < 1:
-                unified_rects.append(rect)
-                continue
-            last = unified_rects[-1]
-            if is_adjacent_rects(last, rect) or rect.intersects(last):
-                print("Unifing two rects:")
-                print("- ", text_by_rect(page, last), last)
-                print("- ", text_by_rect(page, rect), rect)
-                unified_rects.pop()
-                unified_rect = Rect(last.top_left, rect.bottom_right)
-                unified_rects.append(unified_rect)
-            else:
-                unified_rects.append(rect)
-
-        for r in unified_rects:
+        for r in unify_rects(highlight_rects):
             marked = text_by_rect(page, r)
             if "\n" in marked:
                 marked = marked.replace("\n", "__br__")
