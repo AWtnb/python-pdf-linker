@@ -12,6 +12,15 @@ def text_by_rect(page: Page, rect: Rect) -> str:
     return ""
 
 
+def is_adjacent_rects(previous: Rect, current: Rect) -> bool:
+    x_delta = previous.top_right.distance_to(current.top_left, "mm")
+    return (
+        (x_delta < 0.5)
+        and (previous.top_right.y == current.top_left.y)
+        and (previous.bottom_right.y == current.bottom_left.y)
+    )
+
+
 def extract_annots(path: str) -> None:
     pdf = pymupdf.Document(path)
 
@@ -34,8 +43,7 @@ def extract_annots(path: str) -> None:
                 unified_rects.append(rect)
                 continue
             last = unified_rects[-1]
-            x_delta = rect.top_left.x - last.top_right.x
-            if (x_delta < 0.05) and (last.top_left.y == rect.top_left.y):
+            if is_adjacent_rects(last, rect):
                 print("Unifing two adjacent rects:")
                 print("- ", text_by_rect(page, last), last)
                 print("- ", text_by_rect(page, rect), rect)
