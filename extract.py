@@ -50,7 +50,7 @@ def extract_annots(path: str) -> None:
                 unified_rects.append(rect)
                 continue
             last = unified_rects[-1]
-            if is_adjacent_rects(last, rect):
+            if is_adjacent_rects(last, rect) or rect.intersects(last):
                 print("Unifing two adjacent rects:")
                 print("- ", text_by_rect(page, last), last)
                 print("- ", text_by_rect(page, rect), rect)
