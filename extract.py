@@ -1,4 +1,6 @@
+import csv
 import sys
+from datetime import datetime
 from pathlib import Path
 
 import pymupdf
@@ -38,20 +40,22 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
 def extract_annots(path: str) -> None:
     pdf = pymupdf.Document(path)
 
+    csv_records = []
+
     for i in range(pdf.page_count):
         page = pdf[i]
         highlight_annots = [a for a in page.annots() if a.type[1] == "Highlight"]
         highlight_rects = to_minimal_rects(highlight_annots)
         highlight_rects.sort(key=lambda a: (a.top_left.y, a.top_left.x))
 
-        unified_rects = []
+        unified_rects: list[Rect] = []
         for rect in highlight_rects:
             if len(unified_rects) < 1:
                 unified_rects.append(rect)
                 continue
             last = unified_rects[-1]
             if is_adjacent_rects(last, rect) or rect.intersects(last):
-                print("Unifing two adjacent rects:")
+                print("Unifing two rects:")
                 print("- ", text_by_rect(page, last), last)
                 print("- ", text_by_rect(page, rect), rect)
                 unified_rects.pop()
@@ -61,9 +65,32 @@ def extract_annots(path: str) -> None:
                 unified_rects.append(rect)
 
         for r in unified_rects:
-            print("Page", i + 1)
             marked = text_by_rect(page, r)
-            print(marked)
+            if "\n" in marked:
+                marked = marked.replace("\n", "__br__")
+                print("[WARNING] Linebreak included:", marked)
+            csv_records.append(
+                {
+                    "page": i + 1,
+                    "text": marked,
+                    "href": "",
+                    "x0": r.x0,
+                    "y0": r.y0,
+                    "x1": r.x1,
+                    "y1": r.y1,
+                }
+            )
+
+    timestamp = datetime.today().strftime("%Y%m%d_%H%M%S")
+    out_csv_path = Path(path).with_name(f"{Path(path).stem}_{timestamp}.csv")
+
+    with open(out_csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, ["page", "text", "href", "x0", "y0", "x1", "y1"])
+        writer.writeheader()
+        for rec in csv_records:
+            writer.writerow(rec)
+
+    pdf.close()
 
 
 if __name__ == "__main__":
