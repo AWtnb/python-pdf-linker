@@ -26,7 +26,7 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
                 continue
             vertices_count = len(vertices)
             if vertices_count % 4 != 0:
-                raise ValueError(f"Annootation has non-4-multipled vertices: {t}")
+                raise ValueError(f"Annotation has non-4-multipled vertices: {t}")
             quad_count = int(vertices_count / 4)
             for i in range(quad_count):
                 q = vertices[i * 4 : i * 4 + 4]
