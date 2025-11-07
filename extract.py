@@ -18,13 +18,21 @@ def text_by_rect(page: Page, rect: Rect) -> str:
 def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
     rects = []
     for annot in annots:
-        vertices = annot.vertices
-        if not vertices:
-            continue
-        quad_count = int(len(vertices) / 4)
-        for i in range(quad_count):
-            q = vertices[i * 4 : i * 4 + 4]
-            rects.append(Quad(*q).rect)
+        t = annot.get_text()
+        try:
+            vertices = annot.vertices
+            if not vertices:
+                print(f"Annotation has no vertices: {t}")
+                continue
+            vertices_count = len(vertices)
+            if vertices_count % 4 != 0:
+                raise ValueError(f"Annootation has non-4-multipled vertices: {t}")
+            quad_count = int(vertices_count / 4)
+            for i in range(quad_count):
+                q = vertices[i * 4 : i * 4 + 4]
+                rects.append(Quad(*q).rect)
+        except ValueError as e:
+            print(e)
     return rects
 
 
