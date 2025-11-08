@@ -37,18 +37,21 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
 
 
 def is_adjacent_rects(previous: Rect, current: Rect) -> bool:
-    x_delta = previous.top_right.distance_to(current.top_left, "mm")
-    return x_delta < 0.5
+    return (
+        previous.top_right.distance_to(current.top_left, "mm") < 0.5
+        and previous.bottom_right.distance_to(current.bottom_left, "mm") < 0.5
+    )
 
 
 def unify_rects(rects: list[Rect]) -> list[Rect]:
+    # Assuming `rects` are sorted by position (top-left-first), unify adjacent rects.
     unified: list[Rect] = []
     for rect in rects:
         if len(unified) < 1:
             unified.append(rect)
             continue
         last = unified[-1]
-        if is_adjacent_rects(last, rect) or rect.intersects(last):
+        if last.contains(rect.top_left) or is_adjacent_rects(last, rect):
             unified.pop()
             unified_rect = Rect(last.top_left, rect.bottom_right)
             unified.append(unified_rect)
