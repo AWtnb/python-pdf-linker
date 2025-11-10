@@ -6,6 +6,8 @@ from pathlib import Path
 import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
+from records import CSVRecord, CSVColumns
+
 
 def text_by_rect(page: Page, rect: Rect) -> str:
     clip = page.get_text(clip=rect)
@@ -63,7 +65,7 @@ def unify_rects(rects: list[Rect]) -> list[Rect]:
 def extract_annots(path: str) -> None:
     pdf = pymupdf.Document(path)
 
-    csv_records = []
+    csv_records: list[CSVRecord] = []
 
     for i in range(pdf.page_count):
         page = pdf[i]
@@ -76,23 +78,22 @@ def extract_annots(path: str) -> None:
             if "\n" in marked:
                 marked = marked.replace("\n", "__br__")
                 print("[WARNING] Linebreak included:", marked)
-            csv_records.append(
-                {
-                    "page": i + 1,
-                    "text": marked,
-                    "href": "",
-                    "x0": r.x0,
-                    "y0": r.y0,
-                    "x1": r.x1,
-                    "y1": r.y1,
-                }
-            )
+            record: CSVRecord = {
+                "page": i + 1,
+                "text": marked,
+                "href": "",
+                "x0": r.x0,
+                "y0": r.y0,
+                "x1": r.x1,
+                "y1": r.y1,
+            }
+            csv_records.append(record)
 
     timestamp = datetime.today().strftime("%Y%m%d_%H%M%S")
     out_csv_path = Path(path).with_name(f"{Path(path).stem}_{timestamp}.csv")
 
     with open(out_csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, ["page", "text", "href", "x0", "y0", "x1", "y1"])
+        writer = csv.DictWriter(f, CSVColumns)
         writer.writeheader()
         for rec in csv_records:
             writer.writerow(rec)
