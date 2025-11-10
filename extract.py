@@ -6,7 +6,7 @@ from pathlib import Path
 import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
-from records import CSVRecord, CSVColumns
+from records import CSVRecord, CSVHeaders
 
 
 def text_by_rect(page: Page, rect: Rect) -> str:
@@ -45,21 +45,21 @@ def is_adjacent_rects(previous: Rect, current: Rect) -> bool:
     )
 
 
-def unify_rects(rects: list[Rect]) -> list[Rect]:
+def merge_rects(rects: list[Rect]) -> list[Rect]:
     # Assuming `rects` are sorted by position (top-left-first), unify adjacent rects.
-    unified: list[Rect] = []
+    merged: list[Rect] = []
     for rect in rects:
-        if len(unified) < 1:
-            unified.append(rect)
+        if len(merged) < 1:
+            merged.append(rect)
             continue
-        last = unified[-1]
+        last = merged[-1]
         if last.contains(rect.top_left) or is_adjacent_rects(last, rect):
-            unified.pop()
-            unified_rect = Rect(last.top_left, rect.bottom_right)
-            unified.append(unified_rect)
+            merged.pop()
+            merged_rect = Rect(last.top_left, rect.bottom_right)
+            merged.append(merged_rect)
         else:
-            unified.append(rect)
-    return unified
+            merged.append(rect)
+    return merged
 
 
 def extract_annots(path: str) -> None:
@@ -73,28 +73,28 @@ def extract_annots(path: str) -> None:
         highlight_rects = to_minimal_rects(highlight_annots)
         highlight_rects.sort(key=lambda a: (a.top_left.y, a.top_left.x))
 
-        for r in unify_rects(highlight_rects):
+        for r in merge_rects(highlight_rects):
             marked = text_by_rect(page, r)
             if "\n" in marked:
                 marked = marked.replace("\n", "__br__")
                 print("[WARNING] Linebreak included:", marked)
-            record: CSVRecord = {
-                "page": i + 1,
-                "text": marked,
-                "href": "",
-                "x0": r.x0,
-                "y0": r.y0,
-                "x1": r.x1,
-                "y1": r.y1,
-            }
+            record = CSVRecord(
+                i + 1,  # "page"
+                marked,  # "text"
+                "",  # "href"
+                r.x0,  # "x0"
+                r.y0,  # "y0"
+                r.x1,  # "x1"
+                r.y1,  # "y1"
+            )
             csv_records.append(record)
 
     timestamp = datetime.today().strftime("%Y%m%d_%H%M%S")
     out_csv_path = Path(path).with_name(f"{Path(path).stem}_{timestamp}.csv")
 
     with open(out_csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, CSVColumns)
-        writer.writeheader()
+        writer = csv.writer(f)
+        writer.writerow(CSVHeaders)
         for rec in csv_records:
             writer.writerow(rec)
 

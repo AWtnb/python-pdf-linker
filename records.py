@@ -1,7 +1,7 @@
-from typing import TypedDict
+from typing import NamedTuple
 
 
-class CSVRecord(TypedDict):
+class CSVRecord(NamedTuple):
     page: int
     text: str
     href: str
@@ -11,14 +11,16 @@ class CSVRecord(TypedDict):
     y1: float
 
 
-dummy: CSVRecord = {
-    "page": 0,
-    "text": "",
-    "href": "",
-    "x0": 0.0,
-    "y0": 0.0,
-    "x1": 0.0,
-    "y1": 0.0,
-}
+def as_record(ss: tuple[str, ...]) -> CSVRecord:
+    return CSVRecord(
+        int(ss[0]),
+        ss[1],
+        ss[2],
+        float(ss[3]),
+        float(ss[4]),
+        float(ss[5]),
+        float(ss[6]),
+    )
 
-CSVColumns = list(dummy.keys())
+
+CSVHeaders: tuple[str, ...] = CSVRecord._fields
