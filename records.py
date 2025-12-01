@@ -2,7 +2,9 @@ from typing import NamedTuple
 
 
 class CSVRecord(NamedTuple):
+    id: str
     page: int
+    name: str
     text: str
     href: str
     x0: float
@@ -13,13 +15,15 @@ class CSVRecord(NamedTuple):
 
 def as_record(ss: tuple[str, ...]) -> CSVRecord:
     return CSVRecord(
-        int(ss[0]),
-        ss[1],
+        ss[0],
+        int(ss[1]),
         ss[2],
-        float(ss[3]),
-        float(ss[4]),
+        ss[3],
+        ss[4],
         float(ss[5]),
         float(ss[6]),
+        float(ss[7]),
+        float(ss[8]),
     )
 
 
