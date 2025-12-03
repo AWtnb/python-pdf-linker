@@ -52,7 +52,11 @@ def convert_csv(path: str) -> None:
             text += line.Text
             rects += [line.X0, line.Y0, line.X1, line.Y1]
         ti = YamlRecord(
-            Id=f"{idx:04d}", Page=page, Text=remove_spaces(text), Href="", Rects=rects
+            Id=f"{idx:04d}",
+            Page=page,
+            Text=remove_spaces(text),
+            Href="",
+            Rects=rects,
         )
         yaml_content.append(asdict(ti))
         idx += 1
