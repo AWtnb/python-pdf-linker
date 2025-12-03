@@ -12,7 +12,7 @@ class HighlightInfo:
     Y1: float
 
 @dataclass
-class YamlRecord:
+class YamlEntry:
     Id: str
     Page: int
     Text: str

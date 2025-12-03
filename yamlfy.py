@@ -6,7 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 
 import yaml
-from records import HighlightInfo, YamlRecord
+from record import HighlightInfo, YamlEntry
 
 
 def remove_spaces(s: str) -> str:
@@ -20,7 +20,7 @@ def remove_spaces(s: str) -> str:
     return re.sub(r". .", _replacer, s)
 
 
-def convert_csv(path: str) -> None:
+def csv_to_yaml(path: str) -> None:
     his: list[HighlightInfo] = []
 
     with open(path, encoding="utf-8") as f:
@@ -40,26 +40,31 @@ def convert_csv(path: str) -> None:
             )
             his.append(hi)
 
-    name_group = [list(group) for _, group in groupby(his, key=lambda x: x.Name)]
-
     yaml_content: list[dict] = []
     idx = 0
-    for group in name_group:
-        page = group[0].Page
-        text = ""
-        rects = []
-        for line in group:
-            text += line.Text
-            rects += [line.X0, line.Y0, line.X1, line.Y1]
-        ti = YamlRecord(
-            Id=f"{idx:04d}",
-            Page=page,
-            Text=remove_spaces(text),
-            Href="",
-            Rects=rects,
-        )
-        yaml_content.append(asdict(ti))
-        idx += 1
+
+    # First, group record by `Name` (e.g. ckh, xah, rhv, ...)
+    for _, name_group in groupby(his, key=lambda x: x.Name):
+        # https://docs.python.org/3.14/library/itertools.html#itertools.groupby
+        name_group = list(name_group)
+        # Then, re-group each name-based-group by `Page`
+        for page, page_group in groupby(name_group, key=lambda y: y.Page):
+            # https://docs.python.org/3.14/library/itertools.html#itertools.groupby
+            page_group = list(page_group)
+            text = ""
+            rects: list[float] = []
+            for record in page_group:
+                text += record.Text
+                rects += [record.X0, record.Y0, record.X1, record.Y1]
+            ent = YamlEntry(
+                Id=f"id{idx:04d}",
+                Page=page,
+                Text=remove_spaces(text),
+                Href="",
+                Rects=rects,
+            )
+            yaml_content.append(asdict(ent))
+            idx += 1
 
     out_yaml_path = Path(path).with_suffix(".yaml")
     with open(out_yaml_path, "w", encoding="utf-8") as f:
@@ -71,4 +76,4 @@ if __name__ == "__main__":
     if 1 < len(args):
         p = args[1]
         if Path(p).exists():
-            convert_csv(p)
+            csv_to_yaml(p)

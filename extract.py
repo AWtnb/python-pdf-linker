@@ -10,7 +10,7 @@ from dataclasses import astuple, fields
 import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
-from records import HighlightInfo
+from record import HighlightInfo
 
 
 def text_by_rect(page: Page, rect: Rect) -> str:
@@ -122,7 +122,7 @@ def extract_annots(path: str, multicol: bool) -> None:
                 print("[WARNING] Linebreak included:", target)
 
             hi = HighlightInfo(
-                Id=f"{idx:04d}",
+                Id=f"id{idx:04d}",
                 Page=i + 1,
                 Name=name,
                 Text=target,

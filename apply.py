@@ -6,7 +6,7 @@ from pathlib import Path
 import pymupdf
 from pymupdf import Rect
 
-from records import HighlightInfo, as_HighlightInfo
+from record import HighlightInfo, as_HighlightInfo
 from extract import text_by_rect
 
 
