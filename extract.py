@@ -3,13 +3,14 @@ import random
 import re
 import string
 import sys
-from datetime import datetime
 from pathlib import Path
+from dataclasses import astuple, fields
+
 
 import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
-from records import CSVRecord, CSVHeaders
+from records import HighlightInfo
 
 
 def text_by_rect(page: Page, rect: Rect) -> str:
@@ -41,7 +42,7 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
     return rects
 
 
-def is_horizontally_adjacent(previous: Rect, current: Rect) -> bool:
+def is_side_by_side(previous: Rect, current: Rect) -> bool:
     return (
         previous.top_right.distance_to(current.top_left, "mm") < 0.5
         and previous.bottom_right.distance_to(current.bottom_left, "mm") < 0.5
@@ -56,7 +57,7 @@ def merge_rects(rects: list[Rect]) -> list[Rect]:
             merged.append(rect)
             continue
         last = merged[-1]
-        if is_horizontally_adjacent(last, rect):
+        if is_side_by_side(last, rect):
             merged.pop()
             merged_rect = Rect(last.top_left, rect.bottom_right)
             merged.append(merged_rect)
@@ -66,18 +67,7 @@ def merge_rects(rects: list[Rect]) -> list[Rect]:
 
 
 def random_name(length=3):
-    return "".join(random.choices(string.ascii_uppercase, k=length))
-
-
-def remove_spaces(s: str) -> str:
-    def _replacer(m: re.Match) -> str:
-        t = str(m.group(0))
-        if t[0].isascii() and t[2].isascii():
-            return t
-        return t[0] + t[2]
-
-    s = re.sub(r" +", " ", s.strip())
-    return re.sub(r". .", _replacer, s)
+    return "".join(random.choices(string.ascii_lowercase, k=length))
 
 
 def is_semantic_end(s: str) -> bool:
@@ -110,7 +100,7 @@ def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
 def extract_annots(path: str, multicol: bool) -> None:
     pdf = pymupdf.Document(path)
 
-    csv_records: list[CSVRecord] = []
+    contents: list[HighlightInfo] = []
     idx = 1
 
     for i in range(pdf.page_count):
@@ -125,37 +115,37 @@ def extract_annots(path: str, multicol: bool) -> None:
         name = random_name()
 
         for r in merge_rects(highlight_rects):
-            marked = text_by_rect(page, r)
-            marked = remove_spaces(marked)
-            if "\n" in marked:
-                marked = marked.replace("\n", "__br__")
-                print("[WARNING] Linebreak included:", marked)
+            target = text_by_rect(page, r)
+            # marked = remove_spaces(marked)
+            if "\n" in target:
+                target = target.replace("\n", "__br__")
+                print("[WARNING] Linebreak included:", target)
 
-            record = CSVRecord(
-                f"{idx:04d}",  # "id"
-                i + 1,  # "page"
-                name,  # "name"
-                marked,  # "text"
-                "",  # "href"
-                r.x0,  # "x0"
-                r.y0,  # "y0"
-                r.x1,  # "x1"
-                r.y1,  # "y1"
+            hi = HighlightInfo(
+                Id=f"{idx:04d}",
+                Page=i + 1,
+                Name=name,
+                Text=target,
+                X0=r.x0,
+                Y0=r.y0,
+                X1=r.x1,
+                Y1=r.y1,
             )
-            csv_records.append(record)
+            contents.append(hi)
             idx += 1
 
-            if is_semantic_end(marked):
+            if is_semantic_end(target):
                 name = random_name()
 
-    timestamp = datetime.today().strftime("%Y%m%d_%H%M%S")
-    out_csv_path = Path(path).with_name(f"{Path(path).stem}_{timestamp}.csv")
+    out_csv_path = Path(path).with_suffix(".csv")
+
+    header = tuple(f.name for f in fields(HighlightInfo))
 
     with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(CSVHeaders)
-        for rec in csv_records:
-            writer.writerow(rec)
+        writer.writerow(header)
+        for x in contents:
+            writer.writerow(astuple(x))
 
     pdf.close()
 

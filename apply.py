@@ -6,19 +6,19 @@ from pathlib import Path
 import pymupdf
 from pymupdf import Rect
 
-from records import CSVRecord, as_record
+from records import HighlightInfo, as_HighlightInfo
 from extract import text_by_rect
 
 
 def apply(pdf_path: str, csv_path: str) -> None:
-    csv_records: list[CSVRecord] = []
+    csv_records: list[HighlightInfo] = []
 
     with open(csv_path) as f:
         reader = csv.reader(f)
         for i, r in enumerate(reader):
             if i == 0:
                 continue
-            rec = as_record(tuple(r))
+            rec = as_HighlightInfo(tuple(r))
             csv_records.append(rec)
 
     if len(csv_records) < 1:
