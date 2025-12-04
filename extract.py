@@ -187,7 +187,7 @@ def main(args: list[str]) -> None:
         return
     d = Path(args[1])
     if not d.exists():
-        print(logfy("error", "存在しないディレクトリです", target_path=str(d)))
+        print(logfy("error", "存在しないパスです", target_path=str(d)))
         return
     is_single_column = 2 < len(args) and args[2] == "1"
     if d.is_file():
