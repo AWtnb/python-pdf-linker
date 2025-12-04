@@ -14,11 +14,29 @@ from record import HighlightEntry
 from logger import logfy
 
 
-def text_by_rect(page: Page, rect: Rect) -> str:
-    clip = page.get_text(clip=rect)
-    if isinstance(clip, str):
-        return clip.strip()
-    return ""
+def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
+    c = page.get_text(clip=rect)
+    s = c.strip() if isinstance(c, str) else ""
+    if "\n" not in s:
+        return s, False
+    print(
+        logfy(
+            "warning",
+            f"p.{page.number} 複数行にわたるマーカーが検出されました",
+            target_str=s.replace("\n", "<br>"),
+        )
+    )
+
+    words = page.get_text("words", clip=rect)
+    words_inside_enough = []
+    min_coverage = 0.75
+    for word in words:
+        word_rect = Rect(word[0:4])
+        intersect = word_rect.intersect(rect)
+        if not intersect.is_empty:
+            if min_coverage <= intersect.get_area() / rect.get_area():
+                words_inside_enough.append(word[4])
+    return "".join(words_inside_enough), True
 
 
 # https://github.com/pymupdf/PyMuPDF/issues/318
@@ -141,22 +159,14 @@ def extract_annots(path: str, single_columned: bool) -> None:
         name = random_name()
 
         for r in merge_rects(highlight_rects):
-            target = text_by_rect(page, r)
-            if "\n" in target:
-                target = target.replace("\n", "__br__")
-                print(
-                    logfy(
-                        "warning",
-                        f"p.{i+1} 複数行にわたるマーカーが検出されました",
-                        target_str=target,
-                    )
-                )
+            target, multilined = text_by_rect(page, r)
 
             h = HighlightEntry(
                 Id=f"id{idx:04d}",
                 Page=i + 1,
                 Name=name,
                 Text=target,
+                Multilined=multilined,
                 X0=r.x0,
                 Y0=r.y0,
                 X1=r.x1,

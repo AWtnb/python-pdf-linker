@@ -49,12 +49,16 @@ def csv_to_yaml(path: str) -> None:
                 Page=int(r[1]),
                 Name=r[2].strip(),  # 手入力で入るかもしれないスペースを除去
                 Text=r[3],
-                X0=float(r[4]),
-                Y0=float(r[5]),
-                X1=float(r[6]),
-                Y1=float(r[7]),
+                Multilined=(r[4] == "True"),
+                X0=float(r[5]),
+                Y0=float(r[6]),
+                X1=float(r[7]),
+                Y1=float(r[8]),
             )
-            hs.append(h)
+
+            # Name が空文字であればスキップする
+            if h.Name != "":
+                hs.append(h)
 
     yaml_content: list[dict] = []
     manual_check_targets: list[tuple] = []
@@ -85,7 +89,7 @@ def csv_to_yaml(path: str) -> None:
                 rects += [record.X0, record.Y0, record.X1, record.Y1]
 
             text = remove_spaces(text)
-            if not single_paged:
+            if not single_paged or any([x.Multilined for x in page_group]):
                 manual_check_targets.append((page, text))
 
             ent = YamlEntry(
