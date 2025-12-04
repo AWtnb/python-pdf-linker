@@ -30,7 +30,7 @@ def csv_to_yaml(path: str) -> None:
             logfy(
                 "skip",
                 "出力先のyamlファイルが既に存在してます",
-                target_path=str(out_yaml_path),
+                target_path=out_yaml_path,
             )
         )
         return
@@ -57,19 +57,25 @@ def csv_to_yaml(path: str) -> None:
             hs.append(h)
 
     yaml_content: list[dict] = []
-    idx = 0
     manual_check_targets: list[tuple] = []
+    idx = 0
 
     # まず `Name` 列（ckh, xah, rhv, ...など）でグループ化して、
-    for _, name_group in groupby(hs, key=lambda x: x.Name):
-        # https://docs.python.org/3.14/library/itertools.html#itertools.groupby
-        name_group = list(name_group)
+    name_groups = [list(g) for _, g in groupby(hs, key=lambda x: x.Name)]
+    for name_group in name_groups:  # name_group は同じ Name を持つ要素からなるリスト
 
         # それから、各グループをさらに `Page` ごとにグループ化する
-        for page, page_group in groupby(name_group, key=lambda y: y.Page):
-            page_group = list(page_group)
+        page_groups = [
+            (p, list(g)) for p, g in groupby(name_group, key=lambda y: y.Page)
+        ]
+        single_paged = len(page_groups) == 1
 
-            single_paged = len(page_group) == 1
+        for (
+            page,
+            page_group,
+        ) in (
+            page_groups
+        ):  # page_group は同じ Name を持ち、さらに同じ Page を持つ要素からなるリスト
             text = ""
             rects: list[float] = []
 
@@ -102,8 +108,8 @@ def csv_to_yaml(path: str) -> None:
         print(
             logfy(
                 "warning",
-                "ページをまたいだマーカーがあります。チェックリストのファイルを出力したので確認してください",
-                target_path=str(checklist_path),
+                "ページをまたいだマーカーがあります。チェックリストのファイルを確認してください",
+                target_path=checklist_path,
             )
         )
         with open(checklist_path, "w", newline="", encoding="utf-8") as f:
@@ -119,7 +125,7 @@ def main(args: list[str]) -> None:
         return
     d = Path(args[1])
     if not d.exists():
-        print(logfy("error", "存在しないパスです", target_path=str(d)))
+        print(logfy("error", "存在しないパスです", target_path=d))
         return
     if d.is_file():
         csv_to_yaml(str(d))

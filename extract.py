@@ -33,7 +33,7 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
                     logfy(
                         "skip",
                         "アノテーションに存在するはずの vertices が存在しません",
-                        target_str=str(t),
+                        target_str=t,
                     )
                 )
                 continue
@@ -43,7 +43,7 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
                     logfy(
                         "error",
                         "アノテーションの vertices 数が4の倍数ではありません",
-                        target_str=str(t),
+                        target_str=t,
                     )
                 )
             quad_count = int(vertices_count / 4)
@@ -118,7 +118,7 @@ def extract_annots(path: str, single_columned: bool) -> None:
             logfy(
                 "skip",
                 "出力先のCSVファイルが既に存在しています",
-                target_path=str(out_csv_path),
+                target_path=out_csv_path,
             )
         )
         return
@@ -187,7 +187,7 @@ def main(args: list[str]) -> None:
         return
     d = Path(args[1])
     if not d.exists():
-        print(logfy("error", "存在しないパスです", target_path=str(d)))
+        print(logfy("error", "存在しないパスです", target_path=d))
         return
     is_single_column = 2 < len(args) and args[2] == "1"
     if d.is_file():

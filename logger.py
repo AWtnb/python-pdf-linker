@@ -1,11 +1,11 @@
-from typing import Literal
+from typing import Literal, Any
 
 
 def logfy(
     genre: Literal["skip", "error", "processing", "warning"],
     message: str = "",
-    target_str: str = "",
-    target_path: str = "",
+    target_str: Any = "",
+    target_path: Any = "",
 ) -> str:
     s = f"[{genre}] {message}"
     filler = " " * (len(genre) + 3)
