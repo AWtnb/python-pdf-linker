@@ -28,11 +28,15 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
         try:
             vertices = annot.vertices
             if not vertices:
-                print(f"Annotation has no vertices: {t}")
+                print(
+                    f"[skip] アノテーションに存在するはずの vertices が存在しません。対象テキスト: {t}"
+                )
                 continue
             vertices_count = len(vertices)
             if vertices_count % 4 != 0:
-                raise ValueError(f"Annotation has non-4-multipled vertices: {t}")
+                raise ValueError(
+                    f"[error] アノテーションの vertices 数が4の倍数ではありません。対象テキスト: {t}"
+                )
             quad_count = int(vertices_count / 4)
             for i in range(quad_count):
                 q = vertices[i * 4 : i * 4 + 4]
@@ -97,7 +101,14 @@ def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
     return sorted(rects, key=_sortkey)
 
 
-def extract_annots(path: str, multicol: bool) -> None:
+def extract_annots(path: str, single_columned: bool) -> None:
+
+    out_csv_path = Path(path).with_suffix(".csv")
+    if out_csv_path.exists():
+        print(f"[skip] 出力先のCSVファイルが既に存在しています。: {out_csv_path}")
+        return
+
+    print(f"[processing] {path}")
     pdf = pymupdf.Document(path)
 
     contents: list[HighlightInfo] = []
@@ -107,19 +118,20 @@ def extract_annots(path: str, multicol: bool) -> None:
         page = pdf[i]
         highlight_annots = [a for a in page.annots() if a.type[1] == "Highlight"]
         highlight_rects = to_minimal_rects(highlight_annots)
-        if multicol:
-            highlight_rects = sort_multicolumned_rects(page, highlight_rects)
-        else:
+        if single_columned:
             highlight_rects.sort(key=lambda a: (a.top_left.y, a.top_left.x))
+        else:
+            highlight_rects = sort_multicolumned_rects(page, highlight_rects)
 
         name = random_name()
 
         for r in merge_rects(highlight_rects):
             target = text_by_rect(page, r)
-            # marked = remove_spaces(marked)
             if "\n" in target:
                 target = target.replace("\n", "__br__")
-                print("[WARNING] Linebreak included:", target)
+                print(
+                    f"[warning] 複数行にわたるマーカーが検出されました。対象テキスト: {target}"
+                )
 
             hi = HighlightInfo(
                 Id=f"id{idx:04d}",
@@ -137,8 +149,6 @@ def extract_annots(path: str, multicol: bool) -> None:
             if is_semantic_end(target):
                 name = random_name()
 
-    out_csv_path = Path(path).with_suffix(".csv")
-
     header = tuple(f.name for f in fields(HighlightInfo))
 
     with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
@@ -150,9 +160,23 @@ def extract_annots(path: str, multicol: bool) -> None:
     pdf.close()
 
 
+def main(args: list[str]) -> None:
+    if len(args) < 2:
+        print(
+            "使用方法: `uv run .\\extract.py target\\directory\\path` もしくは、対象PDFが一段組の場合は `uv run .\\extract.py target\\directory\\path 1`"
+        )
+        return
+    d = Path(args[1])
+    if not d.exists():
+        print("存在しないディレクトリです。")
+        return
+    is_single_column = 2 < len(args) and args[2] == "1"
+    if d.is_file():
+        extract_annots(str(d), is_single_column)
+    else:
+        for p in d.glob("*.pdf"):
+            extract_annots(str(p), is_single_column)
+
+
 if __name__ == "__main__":
-    args = sys.argv
-    if 1 < len(args):
-        p = args[1]
-        if Path(p).exists():
-            extract_annots(p, True)
+    main(sys.argv)
