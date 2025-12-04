@@ -147,7 +147,7 @@ def extract_annots(path: str, single_columned: bool) -> None:
                 print(
                     logfy(
                         "warning",
-                        "複数行にわたるマーカーが検出されました",
+                        f"p.{i+1} 複数行にわたるマーカーが検出されました",
                         target_str=target,
                     )
                 )
