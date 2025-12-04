@@ -11,6 +11,7 @@ import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
 from record import HighlightInfo
+from logger import logfy
 
 
 def text_by_rect(page: Page, rect: Rect) -> str:
@@ -29,13 +30,21 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
             vertices = annot.vertices
             if not vertices:
                 print(
-                    f"[skip] アノテーションに存在するはずの vertices が存在しません。対象テキスト: {t}"
+                    logfy(
+                        "skip",
+                        "アノテーションに存在するはずの vertices が存在しません",
+                        target_str=str(t),
+                    )
                 )
                 continue
             vertices_count = len(vertices)
             if vertices_count % 4 != 0:
                 raise ValueError(
-                    f"[error] アノテーションの vertices 数が4の倍数ではありません。対象テキスト: {t}"
+                    logfy(
+                        "error",
+                        "アノテーションの vertices 数が4の倍数ではありません",
+                        target_str=str(t),
+                    )
                 )
             quad_count = int(vertices_count / 4)
             for i in range(quad_count):
@@ -53,8 +62,8 @@ def is_side_by_side(previous: Rect, current: Rect) -> bool:
     )
 
 
+# `rects` が左上を起点としてソートされているものとして、隣り合う物同士を1つにまとめる
 def merge_rects(rects: list[Rect]) -> list[Rect]:
-    # Assuming `rects` are sorted by position (top-left-first), unify adjacent rects.
     merged: list[Rect] = []
     for rect in rects:
         if len(merged) < 1:
@@ -105,10 +114,16 @@ def extract_annots(path: str, single_columned: bool) -> None:
 
     out_csv_path = Path(path).with_suffix(".csv")
     if out_csv_path.exists():
-        print(f"[skip] 出力先のCSVファイルが既に存在しています。: {out_csv_path}")
+        print(
+            logfy(
+                "skip",
+                "出力先のCSVファイルが既に存在しています",
+                target_path=str(out_csv_path),
+            )
+        )
         return
 
-    print(f"[processing] {path}")
+    print(logfy("processing", path))
     pdf = pymupdf.Document(path)
 
     contents: list[HighlightInfo] = []
@@ -130,7 +145,11 @@ def extract_annots(path: str, single_columned: bool) -> None:
             if "\n" in target:
                 target = target.replace("\n", "__br__")
                 print(
-                    f"[warning] 複数行にわたるマーカーが検出されました。対象テキスト: {target}"
+                    logfy(
+                        "warning",
+                        "複数行にわたるマーカーが検出されました",
+                        target_str=target,
+                    )
                 )
 
             hi = HighlightInfo(
@@ -168,7 +187,7 @@ def main(args: list[str]) -> None:
         return
     d = Path(args[1])
     if not d.exists():
-        print("存在しないディレクトリです。")
+        print(logfy("error", "存在しないディレクトリです", target_path=str(d)))
         return
     is_single_column = 2 < len(args) and args[2] == "1"
     if d.is_file():
