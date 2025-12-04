@@ -6,7 +6,9 @@ from dataclasses import asdict
 from pathlib import Path
 
 import yaml
+
 from record import HighlightInfo, YamlEntry
+from logger import logfy
 
 
 def remove_spaces(s: str) -> str:
@@ -21,6 +23,20 @@ def remove_spaces(s: str) -> str:
 
 
 def csv_to_yaml(path: str) -> None:
+    out_yaml_path = Path(path).with_suffix(".yaml")
+
+    if out_yaml_path.exists():
+        print(
+            logfy(
+                "skip",
+                "出力先のyamlファイルが既に存在してます",
+                target_path=str(out_yaml_path),
+            )
+        )
+        return
+
+    print(logfy("processing", path))
+
     his: list[HighlightInfo] = []
 
     with open(path, encoding="utf-8") as f:
@@ -31,7 +47,7 @@ def csv_to_yaml(path: str) -> None:
             hi = HighlightInfo(
                 Id=r[0],
                 Page=int(r[1]),
-                Name=r[2].strip(),  # for manual edit
+                Name=r[2].strip(),  # 手入力で入るかましれないスペースを除去
                 Text=r[3],
                 X0=float(r[4]),
                 Y0=float(r[5]),
@@ -43,13 +59,12 @@ def csv_to_yaml(path: str) -> None:
     yaml_content: list[dict] = []
     idx = 0
 
-    # First, group record by `Name` (e.g. ckh, xah, rhv, ...)
+    # まず `Name` 列でグループ化して… (e.g. ckh, xah, rhv, ...)
     for _, name_group in groupby(his, key=lambda x: x.Name):
-        # https://docs.python.org/3.14/library/itertools.html#itertools.groupby
+        # おまじない（次も） https://docs.python.org/3.14/library/itertools.html#itertools.groupby
         name_group = list(name_group)
-        # Then, re-group each name-based-group by `Page`
+        # それから、各グループをさらに `Page` ごとにグループ化する
         for page, page_group in groupby(name_group, key=lambda y: y.Page):
-            # https://docs.python.org/3.14/library/itertools.html#itertools.groupby
             page_group = list(page_group)
             text = ""
             rects: list[float] = []
@@ -66,14 +81,25 @@ def csv_to_yaml(path: str) -> None:
             yaml_content.append(asdict(ent))
             idx += 1
 
-    out_yaml_path = Path(path).with_suffix(".yaml")
     with open(out_yaml_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(yaml_content, f, sort_keys=False, allow_unicode=True)
 
 
+def main(args: list[str]) -> None:
+    if len(args) < 2:
+        print("使用方法: `uv run .\\yamlfy.py target\\directory\\path`")
+        return
+    d = Path(args[1])
+    if not d.exists():
+        print(logfy("error", "存在しないパスです", target_path=str(d)))
+        return
+    if d.is_file():
+        csv_to_yaml(str(d))
+    else:
+        for p in d.glob("*.csv"):
+            csv_to_yaml(str(p))
+
+
 if __name__ == "__main__":
     args = sys.argv
-    if 1 < len(args):
-        p = args[1]
-        if Path(p).exists():
-            csv_to_yaml(p)
+    main(args)
