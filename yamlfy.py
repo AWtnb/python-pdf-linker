@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from record import HighlightInfo, YamlEntry
+from record import HighlightEntry, YamlEntry
 from logger import logfy
 
 
@@ -37,45 +37,57 @@ def csv_to_yaml(path: str) -> None:
 
     print(logfy("processing", path))
 
-    his: list[HighlightInfo] = []
+    hs: list[HighlightEntry] = []
 
     with open(path, encoding="utf-8") as f:
         reader = csv.reader(f)
         for i, r in enumerate(reader):
             if i == 0:
                 continue
-            hi = HighlightInfo(
+            h = HighlightEntry(
                 Id=r[0],
                 Page=int(r[1]),
-                Name=r[2].strip(),  # 手入力で入るかましれないスペースを除去
+                Name=r[2].strip(),  # 手入力で入るかもしれないスペースを除去
                 Text=r[3],
                 X0=float(r[4]),
                 Y0=float(r[5]),
                 X1=float(r[6]),
                 Y1=float(r[7]),
             )
-            his.append(hi)
+            hs.append(h)
 
     yaml_content: list[dict] = []
     idx = 0
+    manual_check_targets: list[tuple] = []
 
-    # まず `Name` 列でグループ化して… (e.g. ckh, xah, rhv, ...)
-    for _, name_group in groupby(his, key=lambda x: x.Name):
-        # おまじない（次も） https://docs.python.org/3.14/library/itertools.html#itertools.groupby
+    # まず `Name` 列（ckh, xah, rhv, ...など）でグループ化して、
+    for _, name_group in groupby(hs, key=lambda x: x.Name):
+        # https://docs.python.org/3.14/library/itertools.html#itertools.groupby
         name_group = list(name_group)
+
         # それから、各グループをさらに `Page` ごとにグループ化する
         for page, page_group in groupby(name_group, key=lambda y: y.Page):
             page_group = list(page_group)
+
+            single_paged = len(page_group) == 1
             text = ""
             rects: list[float] = []
+
+            # グループごとに `Text` と座標（X0・Y0・X1・Y1）を集約
             for record in page_group:
                 text += record.Text
                 rects += [record.X0, record.Y0, record.X1, record.Y1]
+
+            text = remove_spaces(text)
+            if not single_paged:
+                manual_check_targets.append((page, text))
+
             ent = YamlEntry(
                 Id=f"id{idx:04d}",
                 Page=page,
-                Text=remove_spaces(text),
+                Text=text,
                 Href="",
+                AutoFlag=(1 if single_paged else 0),
                 Rects=rects,
             )
             yaml_content.append(asdict(ent))
@@ -83,6 +95,22 @@ def csv_to_yaml(path: str) -> None:
 
     with open(out_yaml_path, "w", encoding="utf-8") as f:
         yaml.safe_dump(yaml_content, f, sort_keys=False, allow_unicode=True)
+
+    if 0 < len(manual_check_targets):
+        p = Path(path)
+        checklist_path = p.with_name(f"_checklist_{p.stem}.csv")
+        print(
+            logfy(
+                "warning",
+                "ページをまたいだマーカーがあります。チェックリストのファイルを出力したので確認してください",
+                target_path=str(checklist_path),
+            )
+        )
+        with open(checklist_path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(("Page", "Text"))
+            for c in manual_check_targets:
+                writer.writerow(c)
 
 
 def main(args: list[str]) -> None:

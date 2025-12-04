@@ -10,7 +10,7 @@ from dataclasses import astuple, fields
 import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
-from record import HighlightInfo
+from record import HighlightEntry
 from logger import logfy
 
 
@@ -126,7 +126,7 @@ def extract_annots(path: str, single_columned: bool) -> None:
     print(logfy("processing", path))
     pdf = pymupdf.Document(path)
 
-    contents: list[HighlightInfo] = []
+    contents: list[HighlightEntry] = []
     idx = 1
 
     for i in range(pdf.page_count):
@@ -152,7 +152,7 @@ def extract_annots(path: str, single_columned: bool) -> None:
                     )
                 )
 
-            hi = HighlightInfo(
+            h = HighlightEntry(
                 Id=f"id{idx:04d}",
                 Page=i + 1,
                 Name=name,
@@ -162,13 +162,13 @@ def extract_annots(path: str, single_columned: bool) -> None:
                 X1=r.x1,
                 Y1=r.y1,
             )
-            contents.append(hi)
+            contents.append(h)
             idx += 1
 
             if is_semantic_end(target):
                 name = random_name()
 
-    header = tuple(f.name for f in fields(HighlightInfo))
+    header = tuple(f.name for f in fields(HighlightEntry))
 
     with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
