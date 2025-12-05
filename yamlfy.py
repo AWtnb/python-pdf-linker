@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from entry import HighlightEntry, YamlEntry
-from helpers import smart_log
+from helpers import smart_log, stepped_outpath
 
 
 def remove_spaces(s: str) -> str:
@@ -22,10 +22,10 @@ def remove_spaces(s: str) -> str:
     return re.sub(r". .", _replacer, s)
 
 
-def csv_to_yaml(path: str) -> None:
-    smart_log("debug", "処理開始", target_path=path)
+def csv_to_yaml(csv_path: str) -> None:
+    smart_log("debug", "処理開始", target_path=csv_path)
 
-    out_yaml_path = Path(path).with_suffix(".yaml")
+    out_yaml_path = stepped_outpath(csv_path, 2, "yaml")
 
     if out_yaml_path.exists():
         smart_log(
@@ -37,7 +37,7 @@ def csv_to_yaml(path: str) -> None:
 
     hs: list[HighlightEntry] = []
 
-    with open(path, encoding="utf-8") as f:
+    with open(csv_path, encoding="utf-8") as f:
         reader = csv.reader(f)
         for i, r in enumerate(reader):
             if i == 0:
@@ -86,13 +86,13 @@ def csv_to_yaml(path: str) -> None:
             for record in page_group:
                 text += record.Text
                 rects += [record.X0, record.Y0, record.X1, record.Y1]
-
             text = remove_spaces(text)
-            manuaul_check_flag = not single_paged or any(
-                [x.Multilined for x in page_group]
-            )
+
+            multiline_flag = any([x.Multilined for x in page_group])
+            manuaul_check_flag = not single_paged or multiline_flag
             if manuaul_check_flag:
-                manual_check_targets.append((page, text))
+                check_type = "泣き別れ" if not single_paged else "行間詰まり"
+                manual_check_targets.append((page, check_type, text))
 
             ent = YamlEntry(
                 Id=f"id{idx:04d}",
@@ -109,16 +109,16 @@ def csv_to_yaml(path: str) -> None:
         yaml.safe_dump(yaml_content, f, sort_keys=False, allow_unicode=True)
 
     if 0 < len(manual_check_targets):
-        p = Path(path)
-        checklist_path = p.with_name(f"{p.stem}_checklist.csv")
+        # p = Path(path)
+        checklist_path = stepped_outpath(csv_path, 2, "csv", "_checklist")
         smart_log(
             "warning",
-            "ページをまたいだマーカーがあります。チェックリストのファイルを確認してください",
+            "手動でチェックしたほうが安全なマーカーが見つかりました。チェックリストのファイルを確認してください",
             target_path=checklist_path,
         )
         with open(checklist_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
-            writer.writerow(("Page", "Text"))
+            writer.writerow(("Page", "Type", "Text"))
             for c in manual_check_targets:
                 writer.writerow(c)
 

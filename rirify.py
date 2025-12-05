@@ -5,13 +5,13 @@ from pathlib import Path
 import yaml
 
 from entry import YamlEntry
-from helpers import smart_log
+from helpers import smart_log, stepped_outpath
 
 
-def yaml_to_tsv(path: str) -> None:
-    smart_log("info", "処理開始", target_path=path)
+def yaml_to_tsv(yaml_path: str) -> None:
+    smart_log("info", "処理開始", target_path=yaml_path)
 
-    out_tsv_path = Path(path).with_name(Path(path).stem + "_riri.txt")
+    out_tsv_path = stepped_outpath(yaml_path, 3, "txt", "_riri")
     if out_tsv_path.exists():
         smart_log(
             "warning",
@@ -21,7 +21,7 @@ def yaml_to_tsv(path: str) -> None:
         return
 
     entries: list[YamlEntry] = []
-    with open(path, "r", encoding="utf-8") as f:
+    with open(yaml_path, "r", encoding="utf-8") as f:
         content = yaml.safe_load(f)
         for item in content:
             ent = YamlEntry(

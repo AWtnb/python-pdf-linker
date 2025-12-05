@@ -11,7 +11,7 @@ import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
 from entry import HighlightEntry
-from helpers import smart_log
+from helpers import smart_log, stepped_outpath
 
 
 def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
@@ -131,10 +131,10 @@ def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
     return sorted(rects, key=_sortkey)
 
 
-def extract_annots(path: str, single_columned: bool) -> None:
-    smart_log("debug", "処理開始", target_path=path)
+def extract_annots(pdf_path: str, single_columned: bool) -> None:
+    smart_log("debug", "処理開始", target_path=pdf_path)
 
-    out_csv_path = Path(path).with_suffix(".csv")
+    out_csv_path = stepped_outpath(pdf_path, 1, "csv")
     if out_csv_path.exists():
         smart_log(
             "warning",
@@ -143,7 +143,7 @@ def extract_annots(path: str, single_columned: bool) -> None:
         )
         return
 
-    pdf = pymupdf.Document(path)
+    pdf = pymupdf.Document(pdf_path)
 
     contents: list[HighlightEntry] = []
     idx = 1

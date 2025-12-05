@@ -1,4 +1,5 @@
 import sys
+import re
 from pathlib import Path
 from typing import Any, Literal
 from loguru import logger
@@ -41,5 +42,14 @@ def smart_log(
     logger.log(level, msg)
 
 
-if __name__ == "__main__":
-    pass
+def stepped_outpath(path: str, step: int, ext: str, suffix: str = "") -> Path:
+    p = Path(path)
+    stem = p.stem
+    if not ext.startswith("."):
+        ext = "." + ext
+    new_stem = (
+        f"{stem[:-1]}{step}"
+        if re.search("_step[0-9]$", stem)
+        else stem + f"_step{step}"
+    ) + suffix
+    return p.with_name(new_stem + ext)
