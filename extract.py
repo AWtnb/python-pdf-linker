@@ -10,7 +10,7 @@ from dataclasses import astuple, fields
 import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
-from record import HighlightEntry
+from entry import HighlightEntry
 from logger import logfy
 
 

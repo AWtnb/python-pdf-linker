@@ -7,7 +7,7 @@ from pathlib import Path
 
 import yaml
 
-from record import HighlightEntry, YamlEntry
+from entry import HighlightEntry, YamlEntry
 from logger import logfy
 
 
