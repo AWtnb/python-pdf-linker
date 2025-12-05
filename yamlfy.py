@@ -30,7 +30,7 @@ def csv_to_yaml(path: str) -> None:
     if out_yaml_path.exists():
         smart_log(
             "warning",
-            "出力先のyamlファイルが既に存在してます",
+            "出力先のyamlファイルが既に存在しています",
             target_path=out_yaml_path,
         )
         return
