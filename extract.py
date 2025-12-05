@@ -103,12 +103,14 @@ def random_name(length=3):
 
 
 def is_semantic_end(s: str) -> bool:
-    s = re.sub(r"[）〕]+$", "", s)
+    s = re.sub(r"[）〕。、，]+$", "", s)
     if s.endswith("頁"):
         return True
     if s.endswith("号"):
         return True
     if s.endswith("データベース"):
+        return True
+    if s.endswith("DB"):
         return True
     if re.search(r"[0-9]{8}$", s):
         return True
