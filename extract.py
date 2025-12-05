@@ -13,6 +13,7 @@ from pymupdf import Annot, Page, Rect, Quad
 from entry import HighlightEntry
 from helpers import smart_log
 
+
 def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
     c = page.get_text(clip=rect)
     s = c.strip() if isinstance(c, str) else ""
@@ -20,7 +21,7 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
         return s, False
     smart_log(
         "warning",
-        f"p.{page.number + 1} 複数行にわたるマーカーが検出されました",  # type: ignore
+        f"p.{page.number + 1} マーカーの矩形が上下の行と重なっています",  # type: ignore
         target_str=s.split("\n"),
     )
 
@@ -30,18 +31,16 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
         word_rect = Rect(word[0:4])
         intersect = word_rect.intersect(rect)
         if not intersect.is_empty:
-            coverage = intersect.get_area() / rect.get_area()
-            if 0.75 <= coverage:
+            vertical_coverage = intersect.height / rect.height
+            if 0.5 <= vertical_coverage:
                 text = word[4]
                 words_inside_rect.append(text)
                 smart_log(
                     "info",
-                    f"矩形範囲占有率{str(coverage)[:5]}のテキストを抽出しました",
+                    f"矩形に占める高さ比率{str(vertical_coverage)[:5]}のテキストを抽出しました",
                     target_str=text,
                 )
 
-    if 1 < len(words_inside_rect):
-        smart_log("warning", "矩形内に収まるテキストが複数ありました")
     return "".join(words_inside_rect), True
 
 
