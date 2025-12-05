@@ -11,20 +11,17 @@ import pymupdf
 from pymupdf import Annot, Page, Rect, Quad
 
 from entry import HighlightEntry
-from logger import logfy
-
+from helpers import smart_log
 
 def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
     c = page.get_text(clip=rect)
     s = c.strip() if isinstance(c, str) else ""
     if "\n" not in s:
         return s, False
-    print(
-        logfy(
-            "warning",
-            f"p.{page.number + 1} 複数行にわたるマーカーが検出されました",  # type: ignore
-            target_str=s.split("\n"),
-        )
+    smart_log(
+        "warning",
+        f"p.{page.number + 1} 複数行にわたるマーカーが検出されました",  # type: ignore
+        target_str=s.split("\n"),
     )
 
     words = page.get_text("words", clip=rect)
@@ -37,16 +34,14 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
             if 0.75 <= coverage:
                 text = word[4]
                 words_inside_rect.append(text)
-                print(
-                    logfy(
-                        "processing",
-                        f"矩形範囲占有率{str(coverage)[:5]}のテキストを抽出しました",
-                        target_str=text,
-                    )
+                smart_log(
+                    "info",
+                    f"矩形範囲占有率{str(coverage)[:5]}のテキストを抽出しました",
+                    target_str=text,
                 )
 
     if 1 < len(words_inside_rect):
-        print(logfy("warning", "矩形内に収まるテキストが複数ありました"))
+        smart_log("warning", "矩形内に収まるテキストが複数ありました")
     return "".join(words_inside_rect), True
 
 
@@ -58,29 +53,25 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
         try:
             vertices = annot.vertices
             if not vertices:
-                print(
-                    logfy(
-                        "skip",
-                        "アノテーションに存在するはずの vertices が存在しません",
-                        target_str=t,
-                    )
+                smart_log(
+                    "info",
+                    "アノテーションに存在するはずの vertices が存在しません",
+                    target_str=t,
                 )
                 continue
             vertices_count = len(vertices)
             if vertices_count % 4 != 0:
-                raise ValueError(
-                    logfy(
-                        "error",
-                        "アノテーションの vertices 数が4の倍数ではありません",
-                        target_str=t,
-                    )
-                )
+                raise ValueError
             quad_count = int(vertices_count / 4)
             for i in range(quad_count):
                 q = vertices[i * 4 : i * 4 + 4]
                 rects.append(Quad(*q).rect)
-        except ValueError as e:
-            print(e)
+        except ValueError:
+            smart_log(
+                "error",
+                "アノテーションの vertices 数が4の倍数ではありません",
+                target_str=t,
+            )
     return rects
 
 
@@ -140,19 +131,17 @@ def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
 
 
 def extract_annots(path: str, single_columned: bool) -> None:
+    smart_log("debug", "処理開始", target_path=path)
 
     out_csv_path = Path(path).with_suffix(".csv")
     if out_csv_path.exists():
-        print(
-            logfy(
-                "skip",
-                "出力先のCSVファイルが既に存在しています",
-                target_path=out_csv_path,
-            )
+        smart_log(
+            "warning",
+            "出力先のCSVファイルが既に存在しています",
+            target_path=out_csv_path,
         )
         return
 
-    print(logfy("processing", path))
     pdf = pymupdf.Document(path)
 
     contents: list[HighlightEntry] = []
@@ -208,7 +197,7 @@ def main(args: list[str]) -> None:
         return
     d = Path(args[1])
     if not d.exists():
-        print(logfy("error", "存在しないパスです", target_path=d))
+        smart_log("error", "存在しないパスです", target_path=d)
         return
     is_single_column = 2 < len(args) and args[2] == "1"
     if d.is_file():
