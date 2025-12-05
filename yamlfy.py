@@ -96,7 +96,7 @@ def csv_to_yaml(path: str) -> None:
                 Page=page,
                 Text=text,
                 Href="",
-                AutoFlag=(1 if manuaul_check_flag else 0),
+                AutoFlag=(0 if manuaul_check_flag else 1),
                 Rects=rects,
             )
             yaml_content.append(asdict(ent))
