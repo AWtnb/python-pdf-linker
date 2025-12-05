@@ -8,7 +8,7 @@ def logfy(
     target_path: Any = "",
 ) -> str:
     s = f"[{genre}] {message}"
-    filler = " " * (len(genre) + 3)
+    filler = " " * 4
     if target_str:
         s += f"\n{filler}対象テキスト: {target_str}"
     if target_path:
