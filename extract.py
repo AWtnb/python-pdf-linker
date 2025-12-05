@@ -134,7 +134,7 @@ def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
 def extract_annots(pdf_path: str, single_columned: bool) -> None:
     smart_log("debug", "処理開始", target_path=pdf_path)
 
-    out_csv_path = stepped_outpath(pdf_path, 1, "csv")
+    out_csv_path = stepped_outpath(pdf_path, 1, ".csv")
     if out_csv_path.exists():
         smart_log(
             "warning",
@@ -201,7 +201,7 @@ def main(args: list[str]) -> None:
         smart_log("error", "存在しないパスです", target_path=d)
         return
     is_single_column = 2 < len(args) and args[2] == "1"
-    if d.is_file():
+    if d.is_file() and d.suffix == ".pdf":
         extract_annots(str(d), is_single_column)
     else:
         for p in d.glob("*.pdf"):

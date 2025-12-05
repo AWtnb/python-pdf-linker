@@ -46,7 +46,7 @@ def stepped_outpath(path: str, step: int, ext: str, suffix: str = "") -> Path:
     p = Path(path)
     stem = p.stem
     if not ext.startswith("."):
-        ext = "." + ext
+        raise ValueError("invalid extension.")
     new_stem = (
         f"{stem[:-1]}{step}"
         if re.search("_step[0-9]$", stem)

@@ -11,7 +11,7 @@ from helpers import smart_log, stepped_outpath
 def yaml_to_tsv(yaml_path: str) -> None:
     smart_log("info", "処理開始", target_path=yaml_path)
 
-    out_tsv_path = stepped_outpath(yaml_path, 3, "txt", "_riri")
+    out_tsv_path = stepped_outpath(yaml_path, 3, ".txt", "_riri")
     if out_tsv_path.exists():
         smart_log(
             "warning",
@@ -60,7 +60,7 @@ def main(args: list[str]) -> None:
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
-    if d.is_file():
+    if d.is_file() and d.suffix == ".yaml":
         yaml_to_tsv(str(d))
     else:
         for p in d.glob("*.yaml"):

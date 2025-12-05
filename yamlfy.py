@@ -25,7 +25,7 @@ def remove_spaces(s: str) -> str:
 def csv_to_yaml(csv_path: str) -> None:
     smart_log("debug", "処理開始", target_path=csv_path)
 
-    out_yaml_path = stepped_outpath(csv_path, 2, "yaml")
+    out_yaml_path = stepped_outpath(csv_path, 2, ".yaml")
 
     if out_yaml_path.exists():
         smart_log(
@@ -110,7 +110,7 @@ def csv_to_yaml(csv_path: str) -> None:
 
     if 0 < len(manual_check_targets):
         # p = Path(path)
-        checklist_path = stepped_outpath(csv_path, 2, "csv", "_checklist")
+        checklist_path = stepped_outpath(csv_path, 2, ".csv", "_checklist")
         smart_log(
             "warning",
             "手動でチェックしたほうが安全なマーカーが見つかりました。チェックリストのファイルを確認してください",
@@ -131,7 +131,7 @@ def main(args: list[str]) -> None:
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
-    if d.is_file():
+    if d.is_file() and d.suffix == ".csv":
         csv_to_yaml(str(d))
     else:
         for p in d.glob("*.csv"):
