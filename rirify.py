@@ -60,8 +60,11 @@ def main(args: list[str]) -> None:
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
-    if d.is_file() and d.suffix == ".yaml":
-        yaml_to_tsv(str(d))
+    if d.is_file() :
+        if d.suffix == ".yaml":
+            yaml_to_tsv(str(d))
+        else:
+            smart_log("error", "YAMLファイルを指定してください")
     else:
         for p in d.glob("*.yaml"):
             yaml_to_tsv(str(p))

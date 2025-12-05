@@ -201,8 +201,11 @@ def main(args: list[str]) -> None:
         smart_log("error", "存在しないパスです", target_path=d)
         return
     is_single_column = 2 < len(args) and args[2] == "1"
-    if d.is_file() and d.suffix == ".pdf":
-        extract_annots(str(d), is_single_column)
+    if d.is_file():
+        if d.suffix == ".pdf":
+            extract_annots(str(d), is_single_column)
+        else:
+            smart_log("error", "PDFファイルを指定してください")
     else:
         for p in d.glob("*.pdf"):
             extract_annots(str(p), is_single_column)

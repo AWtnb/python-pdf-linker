@@ -131,8 +131,11 @@ def main(args: list[str]) -> None:
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
-    if d.is_file() and d.suffix == ".csv":
-        csv_to_yaml(str(d))
+    if d.is_file() :
+        if d.suffix == ".csv":
+            csv_to_yaml(str(d))
+        else:
+            smart_log("error", "CSVファイルを指定してください")
     else:
         for p in d.glob("*.csv"):
             csv_to_yaml(str(p))
