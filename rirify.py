@@ -49,7 +49,7 @@ def yaml_to_tsv(yaml_path: str) -> None:
         line = "\t".join([genre, str(ent.AutoFlag), ent.Text, ent.Href])
         tsv_lines.append(line)
 
-    out_tsv_path.write_text(encoding="utf-8", data="\n".join(tsv_lines))
+    out_tsv_path.write_text(encoding="utf-16", data="\n".join(tsv_lines))
 
 
 def main(args: list[str]) -> None:
