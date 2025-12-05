@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from entry import HighlightEntry, YamlEntry
-from logger import logfy
+from mylogger import logfy
 
 
 def remove_spaces(s: str) -> str:
@@ -89,7 +89,8 @@ def csv_to_yaml(path: str) -> None:
                 rects += [record.X0, record.Y0, record.X1, record.Y1]
 
             text = remove_spaces(text)
-            if not single_paged or any([x.Multilined for x in page_group]):
+            manuaul_check_flag = not single_paged or any([x.Multilined for x in page_group])
+            if manuaul_check_flag:
                 manual_check_targets.append((page, text))
 
             ent = YamlEntry(
@@ -97,7 +98,7 @@ def csv_to_yaml(path: str) -> None:
                 Page=page,
                 Text=text,
                 Href="",
-                AutoFlag=(1 if single_paged else 0),
+                AutoFlag=(1 if manuaul_check_flag else 0),
                 Rects=rects,
             )
             yaml_content.append(asdict(ent))
@@ -108,7 +109,7 @@ def csv_to_yaml(path: str) -> None:
 
     if 0 < len(manual_check_targets):
         p = Path(path)
-        checklist_path = p.with_name(f"_checklist_{p.stem}.csv")
+        checklist_path = p.with_name(f"{p.stem}_checklist.csv")
         print(
             logfy(
                 "warning",
