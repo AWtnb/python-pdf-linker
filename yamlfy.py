@@ -54,8 +54,9 @@ def csv_to_yaml(path: str) -> None:
                 Y1=float(r[8]),
             )
 
-            # Name が空文字であればスキップする
-            if h.Name != "":
+            if h.Name == "":
+                smart_log("info", "Name列が空の行をスキップします", target_str=h.Text)
+            else:
                 hs.append(h)
 
     yaml_content: list[dict] = []
@@ -87,7 +88,9 @@ def csv_to_yaml(path: str) -> None:
                 rects += [record.X0, record.Y0, record.X1, record.Y1]
 
             text = remove_spaces(text)
-            manuaul_check_flag = not single_paged or any([x.Multilined for x in page_group])
+            manuaul_check_flag = not single_paged or any(
+                [x.Multilined for x in page_group]
+            )
             if manuaul_check_flag:
                 manual_check_targets.append((page, text))
 
