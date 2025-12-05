@@ -8,7 +8,7 @@ from pathlib import Path
 import yaml
 
 from entry import HighlightEntry, YamlEntry
-from mylogger import logfy
+from helpers import smart_log
 
 
 def remove_spaces(s: str) -> str:
@@ -23,19 +23,17 @@ def remove_spaces(s: str) -> str:
 
 
 def csv_to_yaml(path: str) -> None:
+    smart_log("debug", "処理開始", target_path=path)
+
     out_yaml_path = Path(path).with_suffix(".yaml")
 
     if out_yaml_path.exists():
-        print(
-            logfy(
-                "skip",
-                "出力先のyamlファイルが既に存在してます",
-                target_path=out_yaml_path,
-            )
+        smart_log(
+            "warning",
+            "出力先のyamlファイルが既に存在してます",
+            target_path=out_yaml_path,
         )
         return
-
-    print(logfy("processing", path))
 
     hs: list[HighlightEntry] = []
 
@@ -110,12 +108,10 @@ def csv_to_yaml(path: str) -> None:
     if 0 < len(manual_check_targets):
         p = Path(path)
         checklist_path = p.with_name(f"{p.stem}_checklist.csv")
-        print(
-            logfy(
-                "warning",
-                "ページをまたいだマーカーがあります。チェックリストのファイルを確認してください",
-                target_path=checklist_path,
-            )
+        smart_log(
+            "warning",
+            "ページをまたいだマーカーがあります。チェックリストのファイルを確認してください",
+            target_path=checklist_path,
         )
         with open(checklist_path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f)
@@ -130,7 +126,7 @@ def main(args: list[str]) -> None:
         return
     d = Path(args[1])
     if not d.exists():
-        print(logfy("error", "存在しないパスです", target_path=d))
+        smart_log("error", "存在しないパスです", target_path=d)
         return
     if d.is_file():
         csv_to_yaml(str(d))
