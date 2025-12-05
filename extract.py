@@ -143,7 +143,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
 
     pdf = pymupdf.Document(pdf_path)
 
-    contents: list[HighlightEntry] = []
+    csv_entries: list[HighlightEntry] = []
     idx = 1
 
     for i in range(pdf.page_count):
@@ -171,7 +171,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
                 X1=r.x1,
                 Y1=r.y1,
             )
-            contents.append(h)
+            csv_entries.append(h)
             idx += 1
 
             if is_semantic_end(target):
@@ -182,7 +182,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
     with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(header)
-        for x in contents:
+        for x in csv_entries:
             writer.writerow(astuple(x))
 
     pdf.close()
