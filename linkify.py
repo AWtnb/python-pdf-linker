@@ -118,7 +118,7 @@ def insert_links(yaml_path: str) -> None:
 
 def main(args: list[str]) -> None:
     if len(args) < 2:
-        print("使用方法: `uv run .\\apply.py target\\directory\\path`")
+        print("使用方法: `uv run .\\linkify.py target\\directory\\path`")
         return
     d = Path(args[1])
     if not d.exists():
