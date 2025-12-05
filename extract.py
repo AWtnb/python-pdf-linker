@@ -19,8 +19,9 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
     s = c.strip() if isinstance(c, str) else ""
     if "\n" not in s:
         return s, False
+
     smart_log(
-        "warning",
+        "info",
         f"p.{page.number + 1} マーカーの矩形が上下の行と重なっています",  # type: ignore
         target_str=s.split("\n"),
     )
@@ -49,28 +50,25 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
     rects = []
     for annot in annots:
         t = annot.get_text()
-        try:
-            vertices = annot.vertices
-            if not vertices:
-                smart_log(
-                    "info",
-                    "アノテーションに存在するはずの vertices が存在しません",
-                    target_str=t,
-                )
-                continue
-            vertices_count = len(vertices)
-            if vertices_count % 4 != 0:
-                raise ValueError
-            quad_count = int(vertices_count / 4)
-            for i in range(quad_count):
-                q = vertices[i * 4 : i * 4 + 4]
-                rects.append(Quad(*q).rect)
-        except ValueError:
+        vertices = annot.vertices
+        if not vertices:
             smart_log(
-                "error",
-                "アノテーションの vertices 数が4の倍数ではありません",
-                target_str=t,
+                "info", "注釈の vertices 情報を検出できません", target_str=t, skip=True
             )
+            continue
+        vertices_count = len(vertices)
+        if vertices_count % 4 != 0:
+            smart_log(
+                "warning",
+                "注釈の vertices 数が4の倍数ではありません",
+                target_str=t,
+                skip=True,
+            )
+            continue
+        quad_count = int(vertices_count / 4)
+        for i in range(quad_count):
+            q = vertices[i * 4 : i * 4 + 4]
+            rects.append(Quad(*q).rect)
     return rects
 
 

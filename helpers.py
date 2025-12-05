@@ -29,6 +29,7 @@ def smart_log(
     message: str = "",
     target_str: Any = "",
     target_path: Any = "",
+    skip: bool = False,
 ) -> None:
     mapping = {"error": "ERROR", "warning": "WARNING", "info": "INFO", "debug": "DEBUG"}
 
@@ -37,6 +38,8 @@ def smart_log(
         msg += f"\n    対象テキスト: {target_str}"
     if target_path:
         msg += f"\n    対象パス: '{target_path}'"
+    if skip:
+        msg += f"\n    処理をスキップします"
 
     level = mapping.get(genre, "INFO")
     logger.log(level, msg)

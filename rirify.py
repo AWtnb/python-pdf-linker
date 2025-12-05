@@ -42,8 +42,9 @@ def yaml_to_tsv(yaml_path: str) -> None:
         if ent.Href == "":
             smart_log(
                 "warning",
-                f"{ent.Id} page{ent.Page} リンク先が指定されていません。スキップします",
+                f"{ent.Id} page{ent.Page} リンク先が指定されていません",
                 target_str=ent.Text,
+                skip=True,
             )
             continue
         line = "\t".join([genre, str(ent.AutoFlag), ent.Text, ent.Href])
@@ -60,7 +61,7 @@ def main(args: list[str]) -> None:
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
-    if d.is_file() :
+    if d.is_file():
         if d.suffix == ".yaml":
             yaml_to_tsv(str(d))
         else:

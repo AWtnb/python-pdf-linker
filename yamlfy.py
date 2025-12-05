@@ -55,7 +55,7 @@ def csv_to_yaml(csv_path: str) -> None:
             )
 
             if h.Name == "":
-                smart_log("info", "Name列が空の行をスキップします", target_str=h.Text)
+                smart_log("info", "Name列が空です", target_str=h.Text, skip=True)
             else:
                 hs.append(h)
 
@@ -131,7 +131,7 @@ def main(args: list[str]) -> None:
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
-    if d.is_file() :
+    if d.is_file():
         if d.suffix == ".csv":
             csv_to_yaml(str(d))
         else:
