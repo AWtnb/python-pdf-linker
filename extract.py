@@ -144,7 +144,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
     pdf = pymupdf.Document(pdf_path)
 
     csv_entries: list[HighlightEntry] = []
-    idx = 1
+    entry_idx = 1
 
     for i in range(pdf.page_count):
         page = pdf[i]
@@ -161,7 +161,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
             target, multilined = text_by_rect(page, r)
 
             h = HighlightEntry(
-                Id=f"id{idx:04d}",
+                Id=f"id{entry_idx:04d}",
                 Page=i + 1,
                 Name=name,
                 Text=target,
@@ -172,7 +172,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
                 Y1=r.y1,
             )
             csv_entries.append(h)
-            idx += 1
+            entry_idx += 1
 
             if is_semantic_end(target):
                 name = random_name()
