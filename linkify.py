@@ -1,20 +1,20 @@
 import csv
+import json
 import os
 import sys
 
 from pathlib import Path
 
 import pymupdf
-import yaml
 from pymupdf import Rect
 
-from entry import YamlEntry
+from entry import JsonEntry
 from helpers import smart_log, stepped_outpath
 from extract import text_by_rect
 
 
-def from_yamlpath(yaml_path: str) -> str:
-    p = Path(yaml_path)
+def from_jsonpath(json_path: str) -> str:
+    p = Path(json_path)
     s = p.stem
     pdf_path = (
         p.with_name(s[:-6] + ".pdf")
@@ -26,10 +26,10 @@ def from_yamlpath(yaml_path: str) -> str:
     return ""
 
 
-def insert_links(yaml_path: str) -> None:
-    smart_log("debug", "処理開始", target_path=yaml_path)
+def insert_links(json_path: str) -> None:
+    smart_log("debug", "処理開始", target_path=json_path)
 
-    out_pdf_path = stepped_outpath(yaml_path, 3, ".pdf", "_linked")
+    out_pdf_path = stepped_outpath(json_path, 3, ".pdf", "_linked")
     if out_pdf_path.exists():
         smart_log(
             "warning",
@@ -38,20 +38,20 @@ def insert_links(yaml_path: str) -> None:
         )
         return
 
-    pdf_path = from_yamlpath(yaml_path)
+    pdf_path = from_jsonpath(json_path)
     if pdf_path == "":
         smart_log(
             "error",
-            "YAMLファイル名からPDFファイルを特定できません",
-            target_path=yaml_path,
+            "jsonファイル名からPDFファイルを特定できません",
+            target_path=json_path,
         )
         return
 
-    entries: list[YamlEntry] = []
-    with open(yaml_path, "r", encoding="utf-8") as f:
-        content = yaml.safe_load(f)
+    entries: list[JsonEntry] = []
+    with open(json_path, "r", encoding="utf-8") as f:
+        content = json.load(f)
         for item in content:
-            ent = YamlEntry(
+            ent = JsonEntry(
                 Id=item["Id"],
                 Page=item["Page"],
                 Text=item["Text"],
@@ -119,19 +119,21 @@ def insert_links(yaml_path: str) -> None:
 
 def main(args: list[str]) -> None:
     if len(args) < 2:
-        print(f"使用方法: `uv run .\\{os.path.basename(__file__)} target\\directory\\path`")
+        print(
+            f"使用方法: `uv run .\\{os.path.basename(__file__)} target\\directory\\path`"
+        )
         return
     d = Path(args[1])
     if not d.exists():
         smart_log("error", "存在しないパスです", target_path=d)
         return
     if d.is_file():
-        if d.suffix == ".yaml":
+        if d.suffix == ".json":
             insert_links(str(d))
         else:
-            smart_log("error", "YAMLファイルを指定してください")
+            smart_log("error", "jsonファイルを指定してください")
     else:
-        for p in d.glob("*.yaml"):
+        for p in d.glob("*.json"):
             insert_links(str(p))
 
 
