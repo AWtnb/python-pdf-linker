@@ -1,6 +1,7 @@
 import csv
 import re
 import sys
+import os
 from itertools import groupby
 from dataclasses import asdict
 from pathlib import Path
@@ -125,7 +126,9 @@ def csv_to_yaml(csv_path: str) -> None:
 
 def main(args: list[str]) -> None:
     if len(args) < 2:
-        print("使用方法: `uv run .\\yamlfy.py target\\directory\\path`")
+        print(
+            f"使用方法: `uv run .\\{os.path.basename(__file__)} target\\directory\\path`"
+        )
         return
     d = Path(args[1])
     if not d.exists():

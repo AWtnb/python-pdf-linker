@@ -1,4 +1,5 @@
 import csv
+import os
 import sys
 
 from pathlib import Path
@@ -118,7 +119,7 @@ def insert_links(yaml_path: str) -> None:
 
 def main(args: list[str]) -> None:
     if len(args) < 2:
-        print("使用方法: `uv run .\\linkify.py target\\directory\\path`")
+        print(f"使用方法: `uv run .\\{os.path.basename(__file__)} target\\directory\\path`")
         return
     d = Path(args[1])
     if not d.exists():

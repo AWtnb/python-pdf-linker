@@ -2,6 +2,7 @@ import csv
 import random
 import re
 import string
+import os
 import sys
 from pathlib import Path
 from dataclasses import astuple, fields
@@ -191,7 +192,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
 def main(args: list[str]) -> None:
     if len(args) < 2:
         print(
-            "使用方法: `uv run .\\extract.py target\\directory\\path` もしくは、対象PDFが一段組の場合は `uv run .\\extract.py target\\directory\\path 1`"
+            f"使用方法: `uv run .\\{os.path.basename(__file__)} target\\directory\\path` もしくは、対象PDFが一段組の場合は `uv run .\\extract.py target\\directory\\path 1`"
         )
         return
     d = Path(args[1])
