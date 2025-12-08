@@ -1,18 +1,17 @@
 import sys
 import os
+import json
 
 from pathlib import Path
 
-import yaml
-
-from entry import YamlEntry
+from entry import JsonEntry
 from helpers import smart_log, stepped_outpath
 
 
-def yaml_to_tsv(yaml_path: str) -> None:
-    smart_log("info", "処理開始", target_path=yaml_path)
+def json_to_tsv(json_path: str) -> None:
+    smart_log("info", "処理開始", target_path=json_path)
 
-    out_tsv_path = stepped_outpath(yaml_path, 3, ".txt", "_riri")
+    out_tsv_path = stepped_outpath(json_path, 3, ".txt", "_riri")
     if out_tsv_path.exists():
         smart_log(
             "warning",
@@ -21,11 +20,11 @@ def yaml_to_tsv(yaml_path: str) -> None:
         )
         return
 
-    entries: list[YamlEntry] = []
-    with open(yaml_path, "r", encoding="utf-8") as f:
-        content = yaml.safe_load(f)
+    entries: list[JsonEntry] = []
+    with open(json_path, "r", encoding="utf-8") as f:
+        content = json.load(f)
         for item in content:
-            ent = YamlEntry(
+            ent = JsonEntry(
                 Id=item["Id"],
                 Page=item["Page"],
                 Text=item["Text"],
@@ -65,13 +64,13 @@ def main(args: list[str]) -> None:
         smart_log("error", "存在しないパスです", target_path=d)
         return
     if d.is_file():
-        if d.suffix == ".yaml":
-            yaml_to_tsv(str(d))
+        if d.suffix == ".json":
+            json_to_tsv(str(d))
         else:
-            smart_log("error", "YAMLファイルを指定してください")
+            smart_log("error", "jsonファイルを指定してください")
     else:
-        for p in d.glob("*.yaml"):
-            yaml_to_tsv(str(p))
+        for p in d.glob("*.json"):
+            json_to_tsv(str(p))
 
 
 if __name__ == "__main__":
