@@ -1,4 +1,5 @@
 import csv
+import json
 import re
 import sys
 import os
@@ -6,9 +7,7 @@ from itertools import groupby
 from dataclasses import asdict
 from pathlib import Path
 
-import yaml
-
-from entry import HighlightEntry, YamlEntry
+from entry import HighlightEntry, JsonEntry
 from helpers import smart_log, stepped_outpath
 
 
@@ -23,16 +22,16 @@ def remove_spaces(s: str) -> str:
     return re.sub(r". .", _replacer, s)
 
 
-def csv_to_yaml(csv_path: str) -> None:
+def csv_to_json(csv_path: str) -> None:
     smart_log("debug", "処理開始", target_path=csv_path)
 
-    out_yaml_path = stepped_outpath(csv_path, 2, ".yaml")
+    out_json_path = stepped_outpath(csv_path, 2, ".json")
 
-    if out_yaml_path.exists():
+    if out_json_path.exists():
         smart_log(
             "warning",
-            "出力先のyamlファイルが既に存在しています",
-            target_path=out_yaml_path,
+            "出力先のjsonファイルが既に存在しています",
+            target_path=out_json_path,
         )
         return
 
@@ -60,7 +59,7 @@ def csv_to_yaml(csv_path: str) -> None:
             else:
                 hs.append(h)
 
-    yaml_content: list[dict] = []
+    json_content: list[dict] = []
     manual_check_targets: list[tuple] = []
     idx = 0
 
@@ -95,7 +94,7 @@ def csv_to_yaml(csv_path: str) -> None:
                 check_type = "泣き別れ" if not single_paged else "行間詰まり"
                 manual_check_targets.append((page, check_type, text))
 
-            ent = YamlEntry(
+            ent = JsonEntry(
                 Id=f"id{idx:04d}",
                 Page=page,
                 Text=text,
@@ -103,14 +102,13 @@ def csv_to_yaml(csv_path: str) -> None:
                 AutoFlag=(0 if manuaul_check_flag else 1),
                 Rects=rects,
             )
-            yaml_content.append(asdict(ent))
+            json_content.append(asdict(ent))
             idx += 1
 
-    with open(out_yaml_path, "w", encoding="utf-8") as f:
-        yaml.safe_dump(yaml_content, f, sort_keys=False, allow_unicode=True)
+    with open(out_json_path, "w", encoding="utf-8") as f:
+        json.dump(json_content, f, indent=2, ensure_ascii=False)
 
     if 0 < len(manual_check_targets):
-        # p = Path(path)
         checklist_path = stepped_outpath(csv_path, 2, ".csv", "_checklist")
         smart_log(
             "warning",
@@ -136,12 +134,12 @@ def main(args: list[str]) -> None:
         return
     if d.is_file():
         if d.suffix == ".csv":
-            csv_to_yaml(str(d))
+            csv_to_json(str(d))
         else:
             smart_log("error", "CSVファイルを指定してください")
     else:
         for p in d.glob("*.csv"):
-            csv_to_yaml(str(p))
+            csv_to_json(str(p))
 
 
 if __name__ == "__main__":
