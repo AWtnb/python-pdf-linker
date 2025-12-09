@@ -59,7 +59,7 @@ def insert_links(json_path: str) -> None:
                     item["Href"]
                 ).strip(),  # 手入力で入るかもしれないスペースを除去
                 AutoFlag=item["AutoFlag"],
-                Rects=item["Rects"],
+                Vertices=item["Vertices"],
             )
             entries.append(ent)
 
@@ -68,8 +68,8 @@ def insert_links(json_path: str) -> None:
     entry_idx = 0
 
     for ent in entries:
-        rect_elem_count = len(ent.Rects)
-        if rect_elem_count % 4 != 0:
+        vertices_count = len(ent.Vertices)
+        if vertices_count % 4 != 0:
             smart_log(
                 "warning",
                 f"{ent.Id} p.{ent.Page} 矩形を定義するための座標情報数が4の倍数ではありません",
@@ -80,7 +80,7 @@ def insert_links(json_path: str) -> None:
 
         page = doc[ent.Page - 1]
 
-        rect_count = int(rect_elem_count / 4)
+        rect_count = int(vertices_count / 4)
         for i in range(rect_count):
             if ent.Text == "":
                 smart_log(
@@ -91,7 +91,7 @@ def insert_links(json_path: str) -> None:
                 )
                 continue
 
-            r = ent.Rects[i * 4 : i * 4 + 4]
+            r = ent.Vertices[i * 4 : i * 4 + 4]
             link_rect = Rect(r)
             t, _ = text_by_rect(page, link_rect)
             csv_entries.append(tuple([f"id{entry_idx:04d}", ent.Page, t, ent.Href] + r))

@@ -80,12 +80,12 @@ def csv_to_json(csv_path: str) -> None:
             page_groups
         ):  # page_group は同じ Name を持ち、さらに同じ Page を持つ要素からなるリスト
             text = ""
-            rects: list[float] = []
+            vertices: list[float] = []
 
             # グループごとに `Text` と座標（X0・Y0・X1・Y1）を集約
             for record in page_group:
                 text += record.Text
-                rects += [record.X0, record.Y0, record.X1, record.Y1]
+                vertices += [record.X0, record.Y0, record.X1, record.Y1]
             text = remove_spaces(text)
 
             multiline_flag = any([x.Multilined for x in page_group])
@@ -100,7 +100,7 @@ def csv_to_json(csv_path: str) -> None:
                 Text=text,
                 Href="",
                 AutoFlag=(0 if manuaul_check_flag else 1),
-                Rects=rects,
+                Vertices=vertices,
             )
             json_content.append(asdict(ent))
             idx += 1
