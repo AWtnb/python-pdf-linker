@@ -16,8 +16,8 @@ from helpers import smart_log, stepped_outpath
 
 
 def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
-    c = page.get_text(clip=rect)
-    s = c.strip() if isinstance(c, str) else ""
+    s: str = page.get_text(clip=rect)  # type: ignore
+    s = s.strip()
     if "\n" not in s:
         return s, False
 
@@ -27,7 +27,9 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
         target_str=s.split("\n"),
     )
 
-    words = page.get_text("words", clip=rect)
+    # https://pymupdf.readthedocs.io/en/latest/textpage.html#TextPage.extractWORDS
+    words: list[tuple] = page.get_text("words", clip=rect)  # type: ignore
+
     words_inside_rect = []
     for word in words:
         word_rect = Rect(word[0:4])
@@ -35,15 +37,16 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
         if not intersect.is_empty:
             vertical_coverage = intersect.height / rect.height
             if 0.5 <= vertical_coverage:
-                text = word[4]
-                words_inside_rect.append(text)
+                words_inside_rect.append(word)
                 smart_log(
                     "info",
                     f"矩形に占める高さ比率{str(vertical_coverage)[:5]}のテキストを抽出しました",
-                    target_str=text,
+                    target_str=word[4],
                 )
 
-    return "".join(words_inside_rect), True
+    words_inside_rect.sort(key=lambda w: w[0])
+
+    return "".join([w[4] for w in words_inside_rect]), True
 
 
 # https://github.com/pymupdf/PyMuPDF/issues/318
