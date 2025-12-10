@@ -1,3 +1,5 @@
+import csv
+from pathlib import Path
 from dataclasses import dataclass
 
 
@@ -79,3 +81,49 @@ class JsonEntry:
     Href: str
     AutoFlag: int
     Locations: list[Location]
+
+
+class KiriCSV:
+    header = (
+        "頁",
+        "不要フラグ",
+        "本文・注の区別",
+        "本文の出現ブロック_①横組の場合、右・左_②縦組3段の場合：上・中・下_③縦組4段の場合：1・2・3・4_④表題",
+        "抜き出し内容",
+        "コメント",
+        "目次レベル１",
+        "目次レベル２",
+        "目次レベル３",
+        "目次レベル４",
+        "解説名",
+        "項目番号",
+        "対象判例枝番号",
+        "登載誌",
+        "事件名",
+        "肩書き",
+        "筆者",
+        "筆者読み",
+        "No",
+        "号",
+        "件数",
+    )
+    entries: list[tuple] = []
+
+    def __init__(self) -> None:
+        self.entries = []
+
+    @classmethod
+    def to_entry(cls, nombre: str, text: str) -> tuple:
+        fields = ["" for _ in cls.header]
+        fields[0] = nombre
+        fields[4] = text
+        return tuple(fields)
+
+    def register(self, entry: JsonEntry) -> None:
+        self.entries.append(self.to_entry(entry.Nombre, entry.Text))
+
+    def write_csv(self, path: Path) -> None:
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(self.header)
+            writer.writerows(self.entries)

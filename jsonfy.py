@@ -7,7 +7,7 @@ from itertools import groupby
 from dataclasses import asdict
 from pathlib import Path
 
-from entry import HighlightEntry, JsonEntry, Location
+from entry import HighlightEntry, JsonEntry, Location, KiriCSV
 from helpers import smart_log, stepped_outpath
 
 
@@ -25,7 +25,8 @@ def remove_spaces(s: str) -> str:
 def csv_to_json(csv_path: str) -> None:
     smart_log("debug", "処理開始", target_path=csv_path)
 
-    out_json_path = stepped_outpath(csv_path, 2, ".json")
+    out_csv_path = stepped_outpath(csv_path, 2, ".csv", "_kiri")
+    out_json_path = stepped_outpath(csv_path, 3, ".json")
 
     if out_json_path.exists():
         smart_log(
@@ -60,6 +61,7 @@ def csv_to_json(csv_path: str) -> None:
                 hs.append(h)
 
     json_content: list[dict] = []
+    kiri_csv = KiriCSV()
     idx = 0
 
     # 同じ `Name` （ckh, xah, rhv, ...など）を持つエントリでグループ化
@@ -76,7 +78,8 @@ def csv_to_json(csv_path: str) -> None:
             text += record.Text
             locations.append(
                 Location(
-                    PageIndex=record.PageIndex, Rect=(record.X0, record.Y0, record.X1, record.Y1)
+                    PageIndex=record.PageIndex,
+                    Rect=(record.X0, record.Y0, record.X1, record.Y1),
                 )
             )
         text = remove_spaces(text)
@@ -91,9 +94,12 @@ def csv_to_json(csv_path: str) -> None:
             Locations=locations,
         )
         json_content.append(asdict(ent))
+        kiri_csv.register(ent)
 
     with open(out_json_path, "w", encoding="utf-8") as f:
         json.dump(json_content, f, indent=2, ensure_ascii=False)
+
+    kiri_csv.write_csv(out_csv_path)
 
 
 def main(args: list[str]) -> None:
