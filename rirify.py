@@ -32,7 +32,7 @@ def json_to_tsv(json_path: str) -> None:
                     item["Href"]
                 ).strip(),  # 手入力で入るかもしれないスペースを除去
                 AutoFlag=item["AutoFlag"],
-                Vertices=item["Vertices"],
+                Rects=item["Rects"],
             )
             entries.append(ent)
 
