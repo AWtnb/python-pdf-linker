@@ -4,8 +4,10 @@ import re
 import string
 import os
 import sys
+
 from pathlib import Path
 from dataclasses import astuple, fields
+from typing import NamedTuple
 
 
 import pymupdf
@@ -15,11 +17,16 @@ from entry import HighlightEntry
 from helpers import smart_log, stepped_outpath
 
 
-def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
+class ExcludedWord(NamedTuple):
+    text: str
+    coverage: float
+
+
+def text_by_rect(page: Page, rect: Rect) -> tuple[str, list[ExcludedWord]]:
     s: str = page.get_text(clip=rect)  # type: ignore
     s = s.strip()
     if "\n" not in s:
-        return s, False
+        return s, []
 
     smart_log(
         "info",
@@ -31,22 +38,29 @@ def text_by_rect(page: Page, rect: Rect) -> tuple[str, bool]:
     words: list[tuple] = page.get_text("words", clip=rect)  # type: ignore
 
     words_inside_rect = []
+    words_excluded: list[ExcludedWord] = []
+
     for word in words:
         word_rect = Rect(word[0:4])
         intersect = word_rect.intersect(rect)
-        if not intersect.is_empty:
+        word_text = word[4]
+        if intersect.is_empty:
+            words_excluded.append(ExcludedWord(word_text, 0.0))
+        else:
             vertical_coverage = intersect.height / rect.height
             if 0.5 <= vertical_coverage:
                 words_inside_rect.append(word)
                 smart_log(
                     "info",
                     f"矩形に占める高さ比率{str(vertical_coverage)[:5]}のテキストを抽出しました",
-                    target_str=word[4],
+                    target_str=word_text,
                 )
+            else:
+                words_excluded.append(ExcludedWord(word_text, vertical_coverage))
 
     words_inside_rect.sort(key=lambda w: w[0])
 
-    return "".join([w[4] for w in words_inside_rect]), True
+    return "".join([w[4] for w in words_inside_rect]), words_excluded
 
 
 # https://github.com/pymupdf/PyMuPDF/issues/318
@@ -56,15 +70,13 @@ def to_minimal_rects(annots: list[Annot]) -> list[Rect]:
         t = annot.get_text()
         vertices = annot.vertices
         if not vertices:
-            smart_log(
-                "info", "注釈の vertices 情報を検出できません", target_str=t, skip=True
-            )
+            smart_log("info", "注釈の頂点情報を検出できません", target_str=t, skip=True)
             continue
         vertices_count = len(vertices)
         if vertices_count % 4 != 0:
             smart_log(
                 "warning",
-                "注釈の vertices 数が4の倍数ではありません",
+                "注釈の頂点数が4の倍数ではありません",
                 target_str=t,
                 skip=True,
             )
@@ -121,7 +133,7 @@ def is_semantic_end(s: str) -> bool:
 
 def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
     page_rect = page.bound()
-    page_center = page_rect.top_left.x + (page_rect.width / 2)
+    page_center = (page_rect.x0 + page_rect.x1) / 2
 
     def _sortkey(rect: Rect) -> tuple:
         return (
@@ -131,6 +143,11 @@ def sort_multicolumned_rects(page: Page, rects: list[Rect]) -> list[Rect]:
         )
 
     return sorted(rects, key=_sortkey)
+
+
+class ChecklistEntry(NamedTuple):
+    entry: HighlightEntry
+    excluded: list[ExcludedWord]
 
 
 def extract_annots(pdf_path: str, single_columned: bool) -> None:
@@ -147,6 +164,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
 
     pdf = pymupdf.Document(pdf_path)
 
+    checklist_entries: list[ChecklistEntry] = []
     csv_entries: list[HighlightEntry] = []
     entry_idx = 1
 
@@ -162,34 +180,53 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
         name = random_name()
 
         for r in merge_rects(highlight_rects):
-            target, multilined = text_by_rect(page, r)
+            entry_idx += 1
+            target, excluded = text_by_rect(page, r)
 
             h = HighlightEntry(
                 Id=f"id{entry_idx:04d}",
                 Page=i + 1,
                 Name=name,
                 Text=target,
-                Multilined=multilined,
                 X0=r.x0,
                 Y0=r.y0,
                 X1=r.x1,
                 Y1=r.y1,
             )
             csv_entries.append(h)
-            entry_idx += 1
+
+            if 0 < len(excluded):
+                checklist_entries.append(ChecklistEntry(h, excluded))
 
             if is_semantic_end(target):
                 name = random_name()
 
-    header = tuple(f.name for f in fields(HighlightEntry))
+    pdf.close()
 
+    header = tuple(f.name for f in fields(HighlightEntry))
     with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for x in csv_entries:
             writer.writerow(astuple(x))
 
-    pdf.close()
+    if 0 < len(checklist_entries):
+        checklist_path = stepped_outpath(pdf_path, 1, ".txt", "_checklist")
+        smart_log(
+            "info",
+            "マーカーの矩形が上下の行と重なっている箇所が検出されました。チェックリストを出力します",
+            target_path=checklist_path,
+        )
+
+        lines: list[str] = []
+        for ent in checklist_entries:
+            lines.append(f"p. {ent.entry.Page}")
+            lines.append(f"抽出テキスト：{ent.entry.Text}")
+            lines.append("除外テキスト：")
+            for ex in ent.excluded:
+                lines.append(f"- coverage {str(ex.coverage)[:5]}: {ex.text}")
+            lines.append("")
+        checklist_path.write_text("\n".join(lines), encoding="utf-8")
 
 
 def main(args: list[str]) -> None:
