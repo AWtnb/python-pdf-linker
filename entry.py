@@ -6,7 +6,7 @@ class HighlightEntry:
     """
     PDFに引かれたマーカーのエントリを表すデータクラス。
 
-    - Id: id0000から開始する文字列
+    - Id: id0001から開始する文字列
     - Page: ページ番号
         - 紙面のノンブルではなくPDFファイル上での位置
     - Name: ランダムに生成した3つのアルファベット小文字
@@ -18,9 +18,6 @@ class HighlightEntry:
                 - もし、jsonへの変換時に残したくない場合は、 Name を空文字にする
     - Text: マーカー対象の文字列
         - 数字の前後のスペースなども含め、PDFからコピーしたままの状態
-    - Multilined: 矩形が上下行と重なっているかの判定
-        - 行間が詰まっているなどの場合、 `Page.get_text(clip=rect)` は上下行のフォントbboxの一部でも矩形と重なっているとテキストを抽出してしまうので注意が必要
-        - 狙ったテキストかどうかは矩形の高さの比率で判定する
     - X0: 矩形の座標（左上x）
     - Y0: 矩形の座標（左上y）
     - X1: 矩形の座標（右下x）
@@ -31,7 +28,6 @@ class HighlightEntry:
     Page: int
     Name: str
     Text: str
-    Multilined: bool
     X0: float
     Y0: float
     X1: float
@@ -43,7 +39,7 @@ class JsonEntry:
     """
     Jsonエントリを表すデータクラス。
 
-    - Id: id0000から開始する文字列
+    - Id: id0001から開始する文字列
     - Page: ページ番号
         - 紙面のノンブルではなくPDFファイル上での位置
     - Text: 文字列本文
