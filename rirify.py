@@ -26,13 +26,14 @@ def json_to_tsv(json_path: str) -> None:
         for item in content:
             ent = JsonEntry(
                 Id=item["Id"],
-                Page=item["Page"],
+                PageIndex=item["PageIndex"],
+                Nombre=item["Nombre"],
                 Text=item["Text"],
                 Href=str(
                     item["Href"]
                 ).strip(),  # 手入力で入るかもしれないスペースを除去
                 AutoFlag=item["AutoFlag"],
-                Locations=item["Rects"],
+                Locations=item["Locations"],
             )
             entries.append(ent)
 
@@ -42,7 +43,7 @@ def json_to_tsv(json_path: str) -> None:
         if ent.Href == "":
             smart_log(
                 "warning",
-                f"{ent.Id} page{ent.Page} リンク先が指定されていません",
+                f"{ent.Id} page{ent.PageIndex} リンク先が指定されていません",
                 target_str=ent.Text,
                 skip=True,
             )
