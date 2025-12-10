@@ -44,13 +44,14 @@ def csv_to_json(csv_path: str) -> None:
                 continue
             h = HighlightEntry(
                 Id=r[0],
-                Page=int(r[1]),
-                Name=r[2].strip(),  # 手入力で入るかもしれないスペースを除去
-                Text=r[3],
-                X0=float(r[4]),
-                Y0=float(r[5]),
-                X1=float(r[6]),
-                Y1=float(r[7]),
+                PageIndex=int(r[1]),
+                Nombre=r[2],
+                Name=r[3].strip(),  # 手入力で入るかもしれないスペースを除去
+                Text=r[4],
+                X0=float(r[5]),
+                Y0=float(r[6]),
+                X1=float(r[7]),
+                Y1=float(r[8]),
             )
 
             if h.Name == "":
@@ -68,21 +69,22 @@ def csv_to_json(csv_path: str) -> None:
         idx += 1
         text = ""
         locations: list[Location] = []
-        single_paged = len(set([g.Page for g in name_group])) == 1
+        single_paged = len(set([g.PageIndex for g in name_group])) == 1
 
         # グループごとに `Text` と座標（X0・Y0・X1・Y1）を集約
         for record in name_group:
             text += record.Text
             locations.append(
                 Location(
-                    Page=record.Page, Rect=(record.X0, record.Y0, record.X1, record.Y1)
+                    PageIndex=record.PageIndex, Rect=(record.X0, record.Y0, record.X1, record.Y1)
                 )
             )
         text = remove_spaces(text)
 
         ent = JsonEntry(
             Id=f"id{idx:04d}",
-            Page=name_group[0].Page,  # 先頭のページ
+            PageIndex=name_group[0].PageIndex,  # 先頭のページインデックス
+            Nombre=name_group[0].Nombre,  # 先頭のノンブル
             Text=text,
             Href="",
             AutoFlag=(1 if single_paged else 0),
