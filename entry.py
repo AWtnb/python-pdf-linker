@@ -74,7 +74,7 @@ class JsonEntry:
 
     Id: str
     PageIndex: int
-    Nonbre: str
+    Nombre: str
     Text: str
     Href: str
     AutoFlag: int
