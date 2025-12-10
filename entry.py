@@ -35,6 +35,22 @@ class HighlightEntry:
 
 
 @dataclass
+class Location:
+    """
+    矩形の座標情報とページ情報を表すデータクラス。
+    理論上、これらの情報がわかっていればPDF上で一意に定位できる。
+
+    - Page: ページ番号
+        - 紙面のノンブルではなくPDFファイル上での位置
+    - Rects: マーカーの矩形座標情報
+        - `(x0, y0, x1, y1)`
+    """
+
+    Page: int
+    Rect: tuple[float, float, float, float]
+
+
+@dataclass
 class JsonEntry:
     """
     Jsonエントリを表すデータクラス。
@@ -47,11 +63,10 @@ class JsonEntry:
     - Href: リンク先
     - AutoFlag: 機械的に処理できるかの判定
         - 0：処理不可＝人間が判別する必要あり
+            - `Rects.Page` が1種類ではない＝泣き別れ状態
         - 1：処理可＝ツールに投入して処理
-    - Vertices: マーカーの各頂点の座標情報
-        - [x0, y0, x1, y1, ...]の配列
-        - [PyMuPDFの `Annot.vertices`](https://pymupdf.readthedocs.io/en/latest/annot.html#Annot.vertices) と同じ考え方で、マーカーの矩形が複数行にわたる場合は先頭から順に4要素ずつが矩形のx0, y0, x1, y1に対応する
-        - そのため、要素数は必ず4の倍数となる
+    - Rects: マーカーの矩形座標情報
+        - `Location` データクラスの配列
     """
 
     Id: str
@@ -59,4 +74,4 @@ class JsonEntry:
     Text: str
     Href: str
     AutoFlag: int
-    Vertices: list[float]
+    Rects: list[Location]

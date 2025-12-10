@@ -7,7 +7,7 @@ from itertools import groupby
 from dataclasses import asdict
 from pathlib import Path
 
-from entry import HighlightEntry, JsonEntry
+from entry import HighlightEntry, JsonEntry, Location
 from helpers import smart_log, stepped_outpath
 
 
@@ -47,11 +47,10 @@ def csv_to_json(csv_path: str) -> None:
                 Page=int(r[1]),
                 Name=r[2].strip(),  # 手入力で入るかもしれないスペースを除去
                 Text=r[3],
-                Multilined=(r[4] == "True"),
-                X0=float(r[5]),
-                Y0=float(r[6]),
-                X1=float(r[7]),
-                Y1=float(r[8]),
+                X0=float(r[4]),
+                Y0=float(r[5]),
+                X1=float(r[6]),
+                Y1=float(r[7]),
             )
 
             if h.Name == "":
@@ -60,66 +59,39 @@ def csv_to_json(csv_path: str) -> None:
                 hs.append(h)
 
     json_content: list[dict] = []
-    manual_check_targets: list[tuple] = []
     idx = 0
 
-    # まず `Name` 列（ckh, xah, rhv, ...など）でグループ化して、
+    # 同じ `Name` （ckh, xah, rhv, ...など）を持つエントリでグループ化
     name_groups = [list(g) for _, g in groupby(hs, key=lambda x: x.Name)]
-    for name_group in name_groups:  # name_group は同じ Name を持つ要素からなるリスト
+    for name_group in name_groups:
 
-        # それから、各グループをさらに `Page` ごとにグループ化する
-        page_groups = [
-            (p, list(g)) for p, g in groupby(name_group, key=lambda y: y.Page)
-        ]
-        single_paged = len(page_groups) == 1
+        idx += 1
+        text = ""
+        rects: list[Location] = []
+        single_paged = len(set([g.Page for g in name_group])) == 1
 
-        for (
-            page,
-            page_group,
-        ) in (
-            page_groups
-        ):  # page_group は同じ Name を持ち、さらに同じ Page を持つ要素からなるリスト
-            text = ""
-            vertices: list[float] = []
-
-            # グループごとに `Text` と座標（X0・Y0・X1・Y1）を集約
-            for record in page_group:
-                text += record.Text
-                vertices += [record.X0, record.Y0, record.X1, record.Y1]
-            text = remove_spaces(text)
-
-            multiline_flag = any([x.Multilined for x in page_group])
-            manuaul_check_flag = not single_paged or multiline_flag
-            if manuaul_check_flag:
-                check_type = "泣き別れ" if not single_paged else "行間詰まり"
-                manual_check_targets.append((page, check_type, text))
-
-            ent = JsonEntry(
-                Id=f"id{idx:04d}",
-                Page=page,
-                Text=text,
-                Href="",
-                AutoFlag=(0 if manuaul_check_flag else 1),
-                Vertices=vertices,
+        # グループごとに `Text` と座標（X0・Y0・X1・Y1）を集約
+        for record in name_group:
+            text += record.Text
+            rects.append(
+                Location(
+                    Page=record.Page, Rect=(record.X0, record.Y0, record.X1, record.Y1)
+                )
             )
-            json_content.append(asdict(ent))
-            idx += 1
+        text = remove_spaces(text)
+
+        ent = JsonEntry(
+            Id=f"id{idx:04d}",
+            Page=name_group[0].Page,  # 先頭のページ
+            Text=text,
+            Href="",
+            AutoFlag=(1 if single_paged else 0),
+            Rects=rects,
+        )
+        json_content.append(asdict(ent))
 
     with open(out_json_path, "w", encoding="utf-8") as f:
         json.dump(json_content, f, indent=2, ensure_ascii=False)
-
-    if 0 < len(manual_check_targets):
-        checklist_path = stepped_outpath(csv_path, 2, ".csv", "_checklist")
-        smart_log(
-            "warning",
-            "手動でチェックしたほうが安全なマーカーが見つかりました。チェックリストのファイルを確認してください",
-            target_path=checklist_path,
-        )
-        with open(checklist_path, "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(("Page", "Type", "Text"))
-            for c in manual_check_targets:
-                writer.writerow(c)
 
 
 def main(args: list[str]) -> None:
