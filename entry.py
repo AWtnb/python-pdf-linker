@@ -7,7 +7,8 @@ class HighlightEntry:
     PDFに引かれたマーカーのエントリを表すデータクラス。
 
     - Id: id0001から開始する文字列
-    - Page: PDFの先頭を1としたときのインデックス。紙面のノンブルとは必ずしも一致しない。
+    - PageIndex: PDFの先頭を0としたときのインデックス。紙面のノンブル（`Nombre`）とは一致しない。
+    - Nombre: 紙面のノンブル。
     - Name: ランダムに生成した3つのアルファベット小文字
         - マーカーが複数行にわたる場合、行ごとに矩形を分割して考える。そうして生まれた矩形をグループ化するための便宜的な名前を割り振る
         - 同じ名前を持つエントリ同士で `Text` をつなげると意味のあるまとまりになる、と想定して設計している
@@ -24,7 +25,8 @@ class HighlightEntry:
     """
 
     Id: str
-    Page: int
+    PageIndex: int
+    Nombre: str
     Name: str
     Text: str
     X0: float
@@ -39,17 +41,17 @@ class Location:
     矩形の座標情報とページ情報を表すデータクラス。
     理論上、これらの情報がわかっていればPDF上で一意に定位できる。
 
-    - Page: PDFの先頭を1としたときのインデックス。紙面のノンブルとは必ずしも一致しない。
+    - PageIndex: PDFの先頭を0としたときのインデックス。紙面のノンブル（`Nombre`）とは一致しない。
     - Rect: マーカーの矩形座標情報
         - `(x0, y0, x1, y1)`
     """
 
-    Page: int
+    PageIndex: int
     Rect: tuple[float, float, float, float]
 
     @classmethod
     def from_dict(cls, data: dict) -> Location:
-        return cls(Page=data["Page"], Rect=tuple(data["Rect"]))
+        return cls(PageIndex=data["PageIndex"], Rect=tuple(data["Rect"]))
 
 
 @dataclass
@@ -58,7 +60,8 @@ class JsonEntry:
     Jsonエントリを表すデータクラス。
 
     - Id: id0001から開始する文字列
-    - Page: PDFの先頭を1としたときのインデックス。紙面のノンブルとは必ずしも一致しない。
+    - PageIndex: PDFの先頭を0としたときのインデックス。紙面のノンブル（`Nombre`）とは一致しない。
+    - Nombre: 紙面のノンブル。
     - Text: 文字列本文
         - 不要なスペースは機械的に削除済み
     - Href: リンク先
@@ -70,7 +73,8 @@ class JsonEntry:
     """
 
     Id: str
-    Page: int
+    PageIndex: int
+    Nonbre: str
     Text: str
     Href: str
     AutoFlag: int
