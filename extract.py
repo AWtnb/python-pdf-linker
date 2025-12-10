@@ -166,7 +166,7 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
 
     checklist_entries: list[ChecklistEntry] = []
     csv_entries: list[HighlightEntry] = []
-    entry_idx = 1
+    entry_idx = 0
 
     for i in range(pdf.page_count):
         page = pdf[i]
