@@ -221,7 +221,8 @@ def extract_annots(pdf_path: str, single_columned: bool) -> None:
 
         lines: list[str] = []
         for ent in checklist_entries:
-            lines.append(f"p. {ent.entry.PageIndex}")
+            lines.append(f"ページインデックス：{ent.entry.PageIndex}（開始：0）")
+            lines.append(f"ノンブル：{ent.entry.Nombre}")
             lines.append(f"抽出テキスト：{ent.entry.Text}")
             lines.append("除外テキスト：")
             for ex in ent.excluded:

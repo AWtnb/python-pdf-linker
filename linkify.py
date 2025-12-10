@@ -51,7 +51,8 @@ def insert_links(json_path: str) -> None:
         for item in content:
             ent = JsonEntry(
                 Id=item["Id"],
-                Page=item["Page"],
+                PageIndex=item["PageIndex"],
+                Nombre=item["Nombre"],
                 Text=item["Text"],
                 Href=str(
                     item["Href"]
@@ -67,14 +68,14 @@ def insert_links(json_path: str) -> None:
         if ent.Text == "":
             smart_log(
                 "warning",
-                f"{ent.Id} p.{ent.Page} リンクとして挿入すべき文字列が指定されていません",
+                f"{ent.Id} ページインデックス {ent.PageIndex}（ノンブル {ent.Nombre}）: リンクとして挿入すべき文字列が指定されていません",
                 target_str=ent.Text,
                 skip=True,
             )
             continue
 
         for loc in ent.Locations:
-            page = doc[loc.Page - 1]
+            page = doc[loc.PageIndex]
             link_rect = Rect(loc.Rect)
             page.insert_link(
                 {

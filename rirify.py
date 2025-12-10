@@ -13,12 +13,8 @@ def json_to_tsv(json_path: str) -> None:
 
     out_tsv_path = stepped_outpath(json_path, 3, ".txt", "_riri")
     if out_tsv_path.exists():
-        smart_log(
-            "warning",
-            "出力先のtxtファイルが既に存在しています",
-            target_path=out_tsv_path,
-        )
-        return
+        # ここで生成するファイルは人間が処理する必要がないので上書き可とする
+        pass
 
     entries: list[JsonEntry] = []
     with open(json_path, "r", encoding="utf-8") as f:
@@ -43,7 +39,7 @@ def json_to_tsv(json_path: str) -> None:
         if ent.Href == "":
             smart_log(
                 "warning",
-                f"{ent.Id} page{ent.PageIndex} リンク先が指定されていません",
+                f"{ent.Id} ページインデックス {ent.PageIndex}（ノンブル {ent.Nombre}）: リンク先が指定されていません",
                 target_str=ent.Text,
                 skip=True,
             )
