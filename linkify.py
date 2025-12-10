@@ -1,4 +1,3 @@
-import csv
 import json
 import os
 import sys
@@ -8,9 +7,8 @@ from pathlib import Path
 import pymupdf
 from pymupdf import Rect
 
-from entry import JsonEntry
+from entry import JsonEntry, Location
 from helpers import smart_log, stepped_outpath
-from extract import text_by_rect
 
 
 def from_jsonpath(json_path: str) -> str:
@@ -59,43 +57,25 @@ def insert_links(json_path: str) -> None:
                     item["Href"]
                 ).strip(),  # 手入力で入るかもしれないスペースを除去
                 AutoFlag=item["AutoFlag"],
-                Vertices=item["Vertices"],
+                Locations=[Location.from_dict(l) for l in item["Locations"]],
             )
             entries.append(ent)
 
     doc = pymupdf.Document(pdf_path)
-    csv_entries: list[tuple] = []
-    entry_idx = 0
 
     for ent in entries:
-        vertices_count = len(ent.Vertices)
-        if vertices_count % 4 != 0:
+        if ent.Text == "":
             smart_log(
                 "warning",
-                f"{ent.Id} p.{ent.Page} 矩形を定義するための座標情報数が4の倍数ではありません",
+                f"{ent.Id} p.{ent.Page} リンクとして挿入すべき文字列が指定されていません",
                 target_str=ent.Text,
                 skip=True,
             )
             continue
 
-        page = doc[ent.Page - 1]
-
-        rect_count = int(vertices_count / 4)
-        for i in range(rect_count):
-            if ent.Text == "":
-                smart_log(
-                    "warning",
-                    f"{ent.Id} p.{ent.Page} リンクとして挿入すべき文字列が指定されていません",
-                    target_str=ent.Text,
-                    skip=True,
-                )
-                continue
-
-            r = ent.Vertices[i * 4 : i * 4 + 4]
-            link_rect = Rect(r)
-            t, _ = text_by_rect(page, link_rect)
-            csv_entries.append(tuple([f"id{entry_idx:04d}", ent.Page, t, ent.Href] + r))
-
+        for loc in ent.Locations:
+            page = doc[loc.Page - 1]
+            link_rect = Rect(loc.Rect)
             page.insert_link(
                 {
                     "kind": pymupdf.LINK_URI,
@@ -103,15 +83,6 @@ def insert_links(json_path: str) -> None:
                     "uri": ent.Href,
                 }
             )
-
-            entry_idx += 1
-
-    out_csv_path = out_pdf_path.with_suffix(".csv")
-    with open(out_csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
-        writer.writerow(("Id", "Page", "Text", "Href", "X0", "Y0", "X1", "Y1"))
-        for c in csv_entries:
-            writer.writerow(c)
 
     doc.save(str(out_pdf_path), garbage=3, clean=True, pretty=True)
     doc.close()

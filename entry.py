@@ -40,12 +40,16 @@ class Location:
     理論上、これらの情報がわかっていればPDF上で一意に定位できる。
 
     - Page: PDFの先頭を1としたときのインデックス。紙面のノンブルとは必ずしも一致しない。
-    - Rects: マーカーの矩形座標情報
+    - Rect: マーカーの矩形座標情報
         - `(x0, y0, x1, y1)`
     """
 
     Page: int
     Rect: tuple[float, float, float, float]
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Location:
+        return cls(Page=data["Page"], Rect=tuple(data["Rect"]))
 
 
 @dataclass
@@ -62,8 +66,7 @@ class JsonEntry:
         - 0：処理不可＝人間が判別する必要あり
             - `Rects.Page` が1種類ではない＝泣き別れ状態
         - 1：処理可＝ツールに投入して処理
-    - Rects: マーカーの矩形座標情報
-        - `Location` データクラスの配列
+    - Locations: `Location` データクラスの配列
     """
 
     Id: str
@@ -71,4 +74,4 @@ class JsonEntry:
     Text: str
     Href: str
     AutoFlag: int
-    Rects: list[Location]
+    Locations: list[Location]

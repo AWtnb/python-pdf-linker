@@ -67,13 +67,13 @@ def csv_to_json(csv_path: str) -> None:
 
         idx += 1
         text = ""
-        rects: list[Location] = []
+        locations: list[Location] = []
         single_paged = len(set([g.Page for g in name_group])) == 1
 
         # グループごとに `Text` と座標（X0・Y0・X1・Y1）を集約
         for record in name_group:
             text += record.Text
-            rects.append(
+            locations.append(
                 Location(
                     Page=record.Page, Rect=(record.X0, record.Y0, record.X1, record.Y1)
                 )
@@ -86,7 +86,7 @@ def csv_to_json(csv_path: str) -> None:
             Text=text,
             Href="",
             AutoFlag=(1 if single_paged else 0),
-            Rects=rects,
+            Locations=locations,
         )
         json_content.append(asdict(ent))
 
