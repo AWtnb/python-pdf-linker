@@ -23,6 +23,14 @@ def remove_spaces(s: str) -> str:
 
 
 def csv_to_json(csv_path: str) -> None:
+    if not csv_path.endswith("_step1.csv"):
+        smart_log(
+            "error",
+            "ファイル名が `*_step1.csv` のパターンに一致しません",
+            target_path=csv_path,
+        )
+        return
+
     smart_log("debug", "処理開始", target_path=csv_path)
 
     out_csv_path = stepped_outpath(csv_path, 2, ".csv", "_kiri")

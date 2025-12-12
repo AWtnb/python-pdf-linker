@@ -9,6 +9,14 @@ from helpers import smart_log, stepped_outpath
 
 
 def json_to_tsv(json_path: str) -> None:
+    if not json_path.endswith("_step3.json"):
+        smart_log(
+            "error",
+            "ファイル名が `*_step3.json` のパターンに一致しません",
+            target_path=json_path,
+        )
+        return
+
     smart_log("info", "処理開始", target_path=json_path)
 
     out_tsv_path = stepped_outpath(json_path, 3, ".txt", "_riri")
